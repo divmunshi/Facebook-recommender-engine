@@ -2,6 +2,8 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
+print('Hello')
+
 @app.route('/', methods=['GET', 'POST'])
 def log_request():
     # Log incoming request
