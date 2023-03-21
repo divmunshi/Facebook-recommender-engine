@@ -1,6 +1,9 @@
 version: '3'
 
 services:
+  prod: 
+    build: .
+    command: python3 kafka_producer.py
   app:
     build: .
     ports:
@@ -35,7 +38,7 @@ services:
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_LISTENERS=INSIDE://:9092, OUTSIDE://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=INSIDE://127.0.0.1:9092, OUTSIDE://kafka:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=INSIDE://kafka:9092, OUTSIDE://localhost:9093      
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=INSIDE:PLAINTEXT, OUTSIDE:PLAINTEXT
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=INSIDE
     volumes:

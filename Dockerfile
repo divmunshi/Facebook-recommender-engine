@@ -2,6 +2,7 @@ FROM python:3.9-slim-buster
 
 RUN pip install -U flask
 RUN pip install kafka-python
+RUN pip install confluent-kafka
 
 WORKDIR /app
 
@@ -14,3 +15,4 @@ COPY . .
 EXPOSE 8080
 
 CMD ["flask", "run", "--host=0.0.0.0", "--port=8080"]
+
