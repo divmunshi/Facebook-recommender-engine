@@ -14,10 +14,18 @@ def log_request():
     # Log incoming request
     print(f"Incoming request: {request}")
     return 'OK'
-@app.route('/api', methods=['POST'])
+@app.route('/evt', methods=['POST'])
 def api():
     data = request.get_json()
-    logger.info(f'Received POST request with data: {data}')
+    logger.info(f'Received evt POST request with data: {data}')
+    
+    # Your Flask code here
+    
+    return 'Success'
+@app.route('/item', methods=['POST'])
+def api():
+    data = request.get_json()
+    logger.info(f'Received item POST request with data: {data}')
     
     # Your Flask code here
     
