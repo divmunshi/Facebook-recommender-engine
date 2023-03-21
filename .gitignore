@@ -1,2 +1,23 @@
 backprop-bunch.pem
 *.pem
+
+# Ignore Python virtual environments
+venv/
+
+# Ignore Docker containers and images
+*.log
+*.pid
+*.cfg
+*.conf
+*.pyc
+*.retry
+.env
+
+# Ignore runtime data for databases and message brokers
+__pycache__
+data
+data_kafka/
+data_kafka_conf/
+data/db/
+data_zookeeper/
+data_zookeeper_conf/
