@@ -8,9 +8,38 @@ services:
     volumes:
       - .:/app
     working_dir: /app
-    depends_on:
-      - db
+    
     environment:
       FLASK_APP: app.py
       FLASK_ENV: development
     command: flask run --host=0.0.0.0 --port=8080
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    restart: always
+    ports:
+      - 2181:2181
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    volumes:
+      - ./data_zookeeper:/bitnami/zookeeper
+      - ./data_zookeeper_conf:/bitnami/zookeeper/conf
+
+  kafka:
+    image: bitnami/kafka:latest
+    restart: always
+    ports:
+      - 9092:9092
+      - 9093:9093
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENERS=INSIDE://:9092, OUTSIDE://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=INSIDE://127.0.0.1:9092, OUTSIDE://kafka:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=INSIDE:PLAINTEXT, OUTSIDE:PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=INSIDE
+    volumes:
+      - ./data_kafka:/bitnami/kafka
+      - ./data_kafka_conf:/bitnami/kafka/config
+    depends_on:
+      - zookeeper
