@@ -1,6 +1,7 @@
 FROM python:3.9-slim-buster
 
 RUN pip install -U flask
+RUN pip install kafka-python
 
 WORKDIR /app
 
