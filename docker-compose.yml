@@ -1,9 +1,12 @@
 version: '3'
 
 services:
-  prod: 
+  producer: 
     build: .
     command: python3 kafka_producer.py
+  consumer: 
+    build: .
+    command: python3 kafka_consumer.py
   app:
     build: .
     ports:
