@@ -1,12 +1,6 @@
 version: '3'
 
 services:
-  producer: 
-    build: .
-    command: python3 kafka_producer.py
-  consumer: 
-    build: .
-    command: python3 kafka_consumer.py
   app:
     build: .
     ports:
@@ -14,11 +8,14 @@ services:
     volumes:
       - .:/app
     working_dir: /app
-    
+    depends_on:
+      - kafka
     environment:
       FLASK_APP: app.py
       FLASK_ENV: development
-    command: flask run --host=0.0.0.0 --port=8080
+    command: /bin/bash -c "./wait-for-it.sh kafka:9092 --timeout=60 -- flask run --host=0.0.0.0 --port=8080"
+    networks:
+      - app-network
   zookeeper:
     image: bitnami/zookeeper:latest
     restart: always
@@ -29,6 +26,8 @@ services:
     volumes:
       - ./data_zookeeper:/bitnami/zookeeper
       - ./data_zookeeper_conf:/bitnami/zookeeper/conf
+    networks:
+      - app-network
 
   kafka:
     image: bitnami/kafka:latest
@@ -49,3 +48,9 @@ services:
       - ./data_kafka_conf:/bitnami/kafka/config
     depends_on:
       - zookeeper
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
