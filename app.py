@@ -15,7 +15,7 @@ def log_request():
     print(f"Incoming request: {request}")
     return 'OK'
 @app.route('/evt', methods=['POST'])
-def api():
+def evt():
     data = request.get_json()
     logger.info(f'Received evt POST request with data: {data}')
     
@@ -23,7 +23,7 @@ def api():
     
     return 'Success'
 @app.route('/item', methods=['POST'])
-def api():
+def item():
     data = request.get_json()
     logger.info(f'Received item POST request with data: {data}')
     
