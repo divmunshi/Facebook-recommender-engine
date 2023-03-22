@@ -51,6 +51,10 @@ services:
     networks:
       - app-network
 
+  consumer: 
+    build: .
+    command: python3 kafka_consumer.py
+
 networks:
   app-network:
     driver: bridge
