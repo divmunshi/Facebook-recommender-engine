@@ -59,6 +59,8 @@ def get_producer():
     return producer
 
 @app.route('/', methods=['GET'])
+def sendid():
+    return '241'
 # def hello_world():
 #     prod = get_producer()
 #     if prod is not None:
@@ -70,7 +72,6 @@ def get_producer():
 # def log_request():
     # Log incoming request
     # print(f"Incoming userid: {request.headers.get("user_id")} session_id: {request.headers.get("session_id")}")
-    return '241'
 
 @app.route('/evt', methods=['POST'])
 def evt():
