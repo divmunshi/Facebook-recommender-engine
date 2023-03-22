@@ -60,6 +60,7 @@ def get_producer():
 
 @app.route('/', methods=['GET'])
 def sendid():
+    print('hi')
     return '241'
 # def hello_world():
 #     prod = get_producer()
