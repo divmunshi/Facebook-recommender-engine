@@ -58,19 +58,19 @@ def get_producer():
             time.sleep(5)
     return producer
 
-@app.route('/', methods=['GET', 'POST'])
-def hello_world():
-    prod = get_producer()
-    if prod is not None:
-        message = {"text": "Hello, World!"}
-        prod.send('test', message)
-        return 'Hello, World!'
-    else:
-        return 'Error: No Brokers Available', 500
+@app.route('/', methods=['GET'])
+# def hello_world():
+#     prod = get_producer()
+#     if prod is not None:
+#         message = {"text": "Hello, World!"}
+#         prod.send('test', message)
+#         return 'Hello, World!'
+#     else:
+#         return 'Error: No Brokers Available', 500
 def log_request():
     # Log incoming request
-    print(f"Incoming request: {request}")
-    return 'OK'
+    print(f"Incoming userid: {request.headers.get("user_id")} session_id: {request.headers.get("session_id")}")
+    return '241'
 
 @app.route('/evt', methods=['POST'])
 def evt():
