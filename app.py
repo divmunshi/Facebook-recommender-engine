@@ -59,18 +59,18 @@ def get_producer():
     return producer
 
 @app.route('/', methods=['GET', 'POST'])
-def hello_world():
-    prod = get_producer()
-    if prod is not None:
-        message = {"text": "Hello, World!"}
-        prod.send('test', message)
-        return 'Hello, World!'
-    else:
-        return 'Error: No Brokers Available', 500
-def log_request():
-    # Log incoming request
-    print(f"Incoming request: {request}")
-    return 'OK'
+# def hello_world():
+#     prod = get_producer()
+#     if prod is not None:
+#         message = {"text": "Hello, World!"}
+#         prod.send('test', message)
+#         return 'Hello, World!'
+#     else:
+#         return 'Error: No Brokers Available', 500
+# def log_request():
+#     # Log incoming request
+#     print(f"Incoming request: {request}")
+    return '241'
 
 @app.route('/evt', methods=['POST'])
 def evt():
