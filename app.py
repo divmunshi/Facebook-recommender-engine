@@ -61,6 +61,7 @@ def get_producer():
 @app.route('/', methods=['GET'])
 def sendid():
     print('hi')
+    logger.info(f'in here')
     return '241'
 # def hello_world():
 #     prod = get_producer()
@@ -71,8 +72,8 @@ def sendid():
 #     else:
 #         return 'Error: No Brokers Available', 500
 # def log_request():
-    # Log incoming request
-    # print(f"Incoming userid: {request.headers.get("user_id")} session_id: {request.headers.get("session_id")}")
+#     Log incoming request
+#     print(f"h")
 
 @app.route('/evt', methods=['POST'])
 def evt():
