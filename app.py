@@ -69,7 +69,7 @@ def get_producer():
 #         return 'Error: No Brokers Available', 500
 def log_request():
     # Log incoming request
-    print(f"Incoming userid: {request.headers.get("user_id")} session_id: {request.headers.get("session_id")}")
+    # print(f"Incoming userid: {request.headers.get("user_id")} session_id: {request.headers.get("session_id")}")
     return '241'
 
 @app.route('/evt', methods=['POST'])
