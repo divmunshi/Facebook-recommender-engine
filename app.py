@@ -31,7 +31,7 @@ print('Hello')
 
 # Check Kafka connection status
 host = 'kafka'
-port = 9092
+port = 9093
 producer = None
 # check_connection_status(host, port)
 
@@ -77,6 +77,7 @@ def sendid():
 
 @app.route('/evt', methods=['POST'])
 def evt():
+    return "ok"
     data = request.get_json()
     logger.info(f'Received evt POST request with data: {data}')
 
