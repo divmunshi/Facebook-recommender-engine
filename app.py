@@ -60,8 +60,10 @@ def get_producer():
 
 @app.route('/', methods=['GET'])
 def sendid():
-    print('hi')
-    logger.info(f'in here')
+    user_id = request.headers.get('User-Id')
+    session_id = request.headers.get('Session-Id')
+    logger.info(f"User-Id: {user_id}")
+    logger.info(f"Session-Id: {session_id}")
     return '241'
 # def hello_world():
 #     prod = get_producer()
@@ -84,7 +86,7 @@ def evt():
     # Send data to Kafka
     prod = get_producer()
     if prod is not None:
-        prod.send('test', data)  # Replace 'evt_topic' with your desired topic name
+        prod.send('evt', data)  # Replace 'evt_topic' with your desired topic name
         prod.flush()
         return 'Success'
     else:
