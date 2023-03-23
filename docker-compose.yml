@@ -54,7 +54,6 @@ services:
     restart: always
     ports:
       - "8081:8080"
-
   db:
     image: postgres:14.1-alpine
     restart: always

@@ -6,6 +6,7 @@ from kafka.errors import NoBrokersAvailable
 import time
 import json
 from kafka_helpers import check_connection_status, get_producer
+import psycopg2
 
 app = Flask(__name__)
 
@@ -16,6 +17,15 @@ logger = logging.getLogger(__name__)
 #Kafka details
 host = 'kafka'
 port = 9093
+
+# Postgres
+conn = psycopg2.connect(
+    database="postgres",
+    user="postgres",
+    password="postgres",
+    host="db",
+    port="5432"
+)
 
 @app.route('/', methods=['GET'])
 def sendid():
