@@ -27,14 +27,16 @@ def sendid():
 
 @app.route('/evt', methods=['POST'])
 def evt():
-    data = request.get_json()
-    logger.info(f'Received evt POST request with data: {data}')
-    headers = dict(request.headers)
-    logger.info(f'Received evt POST request with data: {data}, headers: {headers}')
+    cur_usr = request.headers.get("user_id")
+    session = request.headers.get("session_id")
+    ev_type = request.headers.get("event_type")
+    msg_log = f"User: {cur_usr} Session: {session} Type: {ev_type}"
+    logger.info(msg_log)
+    # logger.info(f'Received evt POST request with data: {data}')
     # Send data to Kafka
     prod = get_producer()
     if prod is not None:
-        prod.send('evt', data)  # Replace 'evt_topic' with your desired topic name
+        # prod.send('evt', data)  # Replace 'evt_topic' with your desired topic name
         prod.flush()
         return 'Success'
     else:
@@ -44,12 +46,13 @@ def evt():
 @app.route('/item', methods=['POST'])
 def item():
     data = request.get_json()
-    logger.info(f'Received item POST request with data: {data}')
+    msg_log = f"Received item POST request with userid: {data['user_id']} item_id: {data['item_id']} content_type: {data['content_type']} bucket_key: {data['bucket_key']} item_key: {data['item_key']}"
+    logger.info(msg_log)
 
     # Send data to Kafka
     prod = get_producer()
     if prod is not None:
-        prod.send('item', data)  # Replace 'evt_topic' with your desired topic name
+        # prod.send('item', data)  # Replace 'evt_topic' with your desired topic name
         prod.flush()
         return 'Success'
     else:
