@@ -5,6 +5,7 @@ FROM python:3.9-slim-buster
 RUN apt-get update && apt-get install -y netcat
 RUN pip install -U flask
 RUN pip install kafka-python
+RUN pip install psycopg2
 # RUN pip install confluent-kafka
 
 WORKDIR /app
