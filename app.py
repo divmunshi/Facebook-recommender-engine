@@ -5,7 +5,7 @@ from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 import time
 import json
-import redis
+import redis 
 
 app = Flask(__name__)
 
