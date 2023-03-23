@@ -16,6 +16,17 @@ services:
     command: "flask run --host=0.0.0.0 --port=8080"
     networks:
       - app-network
+  
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis-data:/data
+    container_name: backprop-bunch-redis-container
+
+  
+  
   zookeeper:
     image: bitnami/zookeeper:latest
     restart: always
