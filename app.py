@@ -79,10 +79,10 @@ def sendid():
 
 @app.route('/evt', methods=['POST'])
 def evt():
-    return "ok"
     data = request.get_json()
     logger.info(f'Received evt POST request with data: {data}')
-
+    headers = dict(request.headers)
+    logger.info(f'Received evt POST request with data: {data}, headers: {headers}')
     # Send data to Kafka
     prod = get_producer()
     if prod is not None:
