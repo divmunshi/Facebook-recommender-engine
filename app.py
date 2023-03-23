@@ -5,6 +5,7 @@ from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 import time
 import json
+import redis
 
 app = Flask(__name__)
 
@@ -28,6 +29,12 @@ def check_connection_status(host, port):
 print('Hello')
 
 # time.sleep(20)
+
+r = redis.Redis(
+    host='backprop-bunch-redis-container'
+    port='6379'
+)
+
 
 # Check Kafka connection status
 host = 'kafka'
