@@ -1,4 +1,5 @@
 from kafka import KafkaConsumer
+from kafka.errors import NoBrokersAvailable
 from kafka_helpers import check_connection_status, get_producer
 
 # Replace 'localhost:9092' with the appropriate broker address

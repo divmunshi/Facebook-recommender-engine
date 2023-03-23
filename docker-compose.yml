@@ -46,6 +46,6 @@ services:
     depends_on:
       - zookeeper
 
-  consumer: 
-    build: .
-    command: python3 kafka_consumer.py
+  # consumer: 
+  #   build: .
+  #   command: python3 kafka_consumer.py
