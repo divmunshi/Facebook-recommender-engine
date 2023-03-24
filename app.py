@@ -5,13 +5,26 @@ from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 import time
 import json
-from kafka_helpers import check_connection_status, get_producer, delivery_report, start_consumer_if_not_running
+from kafka_helpers import check_connection_status, delivery_report, create_kafka_producer, create_kafka_consumer, consume
 
 app = Flask(__name__)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+event_consumer = None
+item_consumer = None
+event_consumer_running = False
+item_consumer_running = False
+producer = None
+host = 'kafka'
+port = 9093
+
+if check_connection_status(host, port):
+    producer = create_kafka_producer('kafka', 9093)
+    item_consumer = create_kafka_consumer('kafka', 9093, 'item_group', 'item')
+    event_consumer = create_kafka_consumer('kafka', 9093, 'evt_group', 'evt')
 
 @app.route('/', methods=['GET'])
 def sendid():
@@ -30,17 +43,18 @@ def evt():
     logger.info(msg_log)
     # logger.info(f'Received evt POST request with data: {data}')
     # Send data to Kafka
-    start_consumer_if_not_running('evt', 'evt_group')
-    prod = get_producer()
-    if prod is not None:
+    logger.info(producer)
+    if producer is not None:
         message = {
             "user_id": cur_usr,
             "session_id": session,
             "event_type": ev_type
         }
         serialized_data = json.dumps(message).encode('utf-8')
-        prod.produce('evt', value=serialized_data, key=None, callback=delivery_report)
-        prod.flush()
+        producer.produce('evt', value=serialized_data, key=None, callback=delivery_report)
+        producer.flush()
+        if event_consumer is not None:
+            consume(event_consumer)
         return 'Success'
     else:
         return 'Error: No Brokers Available', 500
@@ -53,17 +67,20 @@ def item():
     logger.info(msg_log)
 
     # Send data to Kafka
-    prod = get_producer()
-    if prod is not None:
+    if producer is not None:
         message = data
         # Serialize the data
         serialized_data = json.dumps(message).encode('utf-8')
-        prod.produce('item', value=serialized_data, key=None, callback=delivery_report)
-        prod.flush()
+        producer.produce('item', value=serialized_data, key=None, callback=delivery_report)
+        producer.flush()
+        if item_consumer is not None:
+            consume(item_consumer)
         return 'Success'
     else:
         return 'Error: No Brokers Available', 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
+
+
 
