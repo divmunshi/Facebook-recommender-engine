@@ -70,7 +70,5 @@ def consume(consumer):
             logging.error(f"Consumer error: {msg.error()}")
         else:
             logging.info(f"Received message: {msg.value().decode('utf-8')}")
-
-    consumer_thread = threading.Thread(target=consume)
-    consumer_thread.daemon = True
-    consumer_thread.start()
+            # if redis_type == 'item'
+                # cache_redis_data(data['user_id'], json.dumps(data))
