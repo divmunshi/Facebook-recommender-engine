@@ -7,6 +7,7 @@ import time
 import json
 import redis 
 
+
 app = Flask(__name__)
 
 # Set up logging
@@ -30,7 +31,7 @@ print('Hello')
 
 # time.sleep(20)
 
-r = redis.Redis(
+redis_client = redis.Redis(
     host='backprop-bunch-redis-container'
     port='6379'
 )
@@ -101,6 +102,30 @@ def evt():
 def item():
     data = request.get_json()
     logger.info(f'Received item POST request with data: {data}')
+
+    #redis
+    #Check if data is already in Redis cache
+    cached_response = redis_client.get(data)
+    # if you want to do it with json then 
+    #cached_response = redis_client.get(json.dumps(data))
+
+    if cached_response: 
+        #If data is already in Redis cache, return cached response
+        return cached_response, 200
+    else:
+        #If data is not in Redis cache, process the request and cache the response 
+        #.... Insert Code to process the request and generate response here ...
+        
+
+
+        #Cache the response in Redis for future requests
+        redis_client.set(data)
+        #redis_client.set(json.dumps(data),json.dumps(response))
+        redis_client.expire(data, 3600) #set expiry time for cache to 1 hour
+        #redis_client.expire(json.dumps(data), 3600)
+
+        # Return the response to the client
+        return 'sucessful', 200
 
     # Send data to Kafka
     prod = get_producer()
