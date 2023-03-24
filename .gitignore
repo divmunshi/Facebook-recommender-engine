@@ -3,7 +3,6 @@ backprop-bunch.pem
 
 # Ignore Python virtual environments
 venv/
-env/
 
 # Ignore Docker containers and images
 *.log
@@ -24,4 +23,3 @@ data_zookeeper/
 data_zookeeper_conf/
 data_pg/
 data_admin/
-redis_data/
