@@ -22,3 +22,6 @@ data_kafka_conf/
 data/db/
 data_zookeeper/
 data_zookeeper_conf/
+data_pg/
+data_admin/
+redis_data/
