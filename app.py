@@ -5,8 +5,10 @@ from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 import time
 import json
-from kafka_helpers import check_connection_status, get_producer
 import psycopg2
+from kafka_helpers import check_connection_status, delivery_report, create_kafka_producer, create_kafka_consumer, consume
+from redis_helpers import cache_redis_data, get_random_redis_item
+import threading
 
 app = Flask(__name__)
 
@@ -14,9 +16,23 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-#Kafka details
-host = 'kafka'
-port = 9093
+
+# Check Kafka connection status
+event_consumer = None
+item_consumer = None
+producer = None
+
+if check_connection_status('kafka', 9093):
+    producer = create_kafka_producer('kafka', 9093)
+    item_consumer = create_kafka_consumer('kafka', 9093, 'item_group', 'item')
+    event_consumer = create_kafka_consumer('kafka', 9093, 'evt_group', 'evt')
+    # start the consumer threads
+    if item_consumer is not None:
+        item_thread = threading.Thread(target=consume, args=(item_consumer,))
+        item_thread.start()
+    if event_consumer is not None:
+        event_thread = threading.Thread(target=consume, args=(event_consumer,))
+        event_thread.start()
 
 # Postgres
 conn = psycopg2.connect(
@@ -39,18 +55,13 @@ def sendid():
 
     cursor = conn.cursor()
     cursor.execute("INSERT INTO requests (user_id, session_id, time_stamp) VALUES (%s, %s,%s)",  (user_id, session_id, time_stamp))
-    cursor.execute("SELECT item_key FROM items  ORDER BY time_stamp DESC LIMIT 1")
-    item_key_reccomended = cursor.fetchall()
-    item_key_reccomended = item_key_reccomended[0][0]
-    # logger.info(f"Reccomended ID: {item_key_reccomended} type {type(item_key_reccomended)}")
-    item_key_reccomended = item_key_reccomended.strip()
-
-    logger.info(item_key_reccomended)
-
     conn.commit()
     cursor.close()
-    
-    return  "9999" #item_key_reccomended
+    random_id = get_random_redis_item()
+    if random_id is None:
+        return '1211'
+    logger.info(f"Random id being returned: {random_id}")
+    return random_id
 
 @app.route('/evt', methods=['POST'])
 def evt():
@@ -63,20 +74,25 @@ def evt():
 
     ## send to postgres
     cursor = conn.cursor()
-    
     # cursor.execute("INSERT INTO events (user_id, session_id, time_stamp, event_type) VALUES (%s, %s,%s, %s)",  (cur_usr, session, time_stamp, ev_type))
     conn.commit()
     cursor.close()
-    return "100"
     # logger.info(f'Received evt POST request with data: {data}')
     # Send data to Kafka
-    # prod = get_producer()
-    # if prod is not None:
-    #     # prod.send('evt', data)  # Replace 'evt_topic' with your desired topic name
-    #     prod.flush()
-    #     return 'Success'
-    # else:
-    #     return 'Error: No Brokers Available', 500
+    if producer is not None:
+        message = {
+            "user_id": cur_usr,
+            "session_id": session,
+            "event_type": ev_type
+        }
+        serialized_data = json.dumps(message).encode('utf-8')
+        producer.produce('evt', value=serialized_data, key=None, callback=delivery_report)
+        producer.flush()
+        if event_consumer is not None:
+            consume(event_consumer)
+        return 'Success'
+    else:
+        return 'Error: No Brokers Available', 500
  
 
 @app.route('/item', methods=['POST'])
@@ -100,15 +116,21 @@ def item():
     cursor.close()
 
 
+    redis_status = cache_redis_data(data['item_id'], json.dumps(data))
+
     # Send data to Kafka
-    # prod = get_producer()
-    # if prod is not None:
-    #     # prod.send('item', data)  # Replace 'evt_topic' with your desired topic name
-    #     prod.flush()
-    #     return 'Success'
-    # else:
-    #     return 'Error: No Brokers Available', 500
-    return "240"
+    if producer is not None:
+        message = data
+        # Serialize the data
+        serialized_data = json.dumps(message).encode('utf-8')
+        producer.produce('item', value=serialized_data, key=None, callback=delivery_report)
+        producer.flush()
+        return "Success", 200
+    else:
+        return (f'Error: No Brokers Available and {redis_status}'), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
+
+
+
