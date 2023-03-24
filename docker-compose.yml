@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   app:
@@ -24,9 +24,6 @@ services:
     volumes:
       - ./redis-data:/data
     container_name: backprop-bunch-redis-container
-
-  
-  
   zookeeper:
     image: bitnami/zookeeper:latest
     restart: always
@@ -37,8 +34,6 @@ services:
     volumes:
       - ./data_zookeeper:/bitnami/zookeeper
       - ./data_zookeeper_conf:/bitnami/zookeeper/conf
-    networks:
-      - app-network
 
   kafka:
     image: bitnami/kafka:latest
@@ -51,7 +46,7 @@ services:
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_LISTENERS=INSIDE://:9092, OUTSIDE://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=INSIDE://kafka:9092, OUTSIDE://localhost:9093      
+      - KAFKA_CFG_ADVERTISED_LISTENERS=INSIDE://127.0.0.1:9092, OUTSIDE://kafka:9093
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=INSIDE:PLAINTEXT, OUTSIDE:PLAINTEXT
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=INSIDE
     volumes:
@@ -59,13 +54,3 @@ services:
       - ./data_kafka_conf:/bitnami/kafka/config
     depends_on:
       - zookeeper
-    networks:
-      - app-network
-
-  consumer: 
-    build: .
-    command: python3 kafka_consumer.py
-
-networks:
-  app-network:
-    driver: bridge

@@ -1,2 +1,5 @@
 Flask
-redis 
+redis
+kafka-python
+confluent-kafka
+

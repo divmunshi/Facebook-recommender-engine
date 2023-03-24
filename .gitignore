@@ -3,6 +3,7 @@ backprop-bunch.pem
 
 # Ignore Python virtual environments
 venv/
+env/
 
 # Ignore Docker containers and images
 *.log
