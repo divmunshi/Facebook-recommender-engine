@@ -37,14 +37,14 @@ if check_connection_status('kafka', 9093):
         event_thread.start()
 
 # Postgres
-# conn = psycopg2.connect(
-#     database="backprop-bunch",
-#     user="root",
-#     password="backprop",
-#     host="postgres",
-#     port="5432", 
-#     application_name="app"
-# )
+conn = psycopg2.connect(
+    database="backprop-bunch",
+    user="root",
+    password="backprop",
+    host="postgres",
+    port="5432", 
+    application_name="app"
+)
 
 @app.route('/', methods=['GET'])
 def sendid():
