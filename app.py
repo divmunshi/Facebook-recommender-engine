@@ -35,14 +35,14 @@ if check_connection_status('kafka', 9093):
         event_thread.start()
 
 # Postgres
-conn = psycopg2.connect(
-    database="backprop-bunch",
-    user="root",
-    password="backprop",
-    host="postgres",
-    port="5432", 
-    application_name="app"
-)
+# conn = psycopg2.connect(
+#     database="backprop-bunch",
+#     user="root",
+#     password="backprop",
+#     host="postgres",
+#     port="5432", 
+#     application_name="app"
+# )
 
 @app.route('/', methods=['GET'])
 def sendid():
@@ -53,10 +53,10 @@ def sendid():
     logger.info(f"Session-Id: {session_id}")
     time_stamp = time.time()
 
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO requests (user_id, session_id, time_stamp) VALUES (%s, %s,%s)",  (user_id, session_id, time_stamp))
-    conn.commit()
-    cursor.close()
+    # cursor = conn.cursor()
+    # cursor.execute("INSERT INTO requests (user_id, session_id, time_stamp) VALUES (%s, %s,%s)",  (user_id, session_id, time_stamp))
+    # conn.commit()
+    # cursor.close()
     random_id = get_random_redis_item()
     if random_id is None:
         return '1211'
@@ -73,10 +73,10 @@ def evt():
     time_stamp = time.time()
 
     ## send to postgres
-    cursor = conn.cursor()
+    # cursor = conn.cursor()
     # cursor.execute("INSERT INTO events (user_id, session_id, time_stamp, event_type) VALUES (%s, %s,%s, %s)",  (cur_usr, session, time_stamp, ev_type))
-    conn.commit()
-    cursor.close()
+    # conn.commit()
+    # cursor.close()
     # logger.info(f'Received evt POST request with data: {data}')
     # Send data to Kafka
     if producer is not None:
@@ -109,14 +109,14 @@ def item():
     bckt_key = data['bucket_key']
     time_stamp = time.time()
 
-    cursor = conn.cursor()
+    # cursor = conn.cursor()
     
     # cursor.execute("INSERT INTO items (user_id, item_id, bucket_key, time_stamp, item_key, content_type) VALUES (%s, %s,%s, %s, %s, %s)",  (cur_usr, itm_id, bckt_key, time_stamp, itm_key,cnt_type))
-    conn.commit()
-    cursor.close()
+    # conn.commit()
+    # cursor.close()
 
 
-    redis_status = cache_redis_data(data['item_id'], json.dumps(data))
+    redis_status = cache_redis_data(data['item_key'], data)
 
     # Send data to Kafka
     if producer is not None:
@@ -125,7 +125,7 @@ def item():
         serialized_data = json.dumps(message).encode('utf-8')
         producer.produce('item', value=serialized_data, key=None, callback=delivery_report)
         producer.flush()
-        return "Success", 200
+        return (f'Success and {redis_status}'), 200
     else:
         return (f'Error: No Brokers Available and {redis_status}'), 500
 
