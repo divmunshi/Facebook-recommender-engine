@@ -75,7 +75,6 @@ services:
   pgadmin:
     user: root
     image: dpage/pgadmin4
-    user: root
     restart: always
     ports:
       - 5050:80
