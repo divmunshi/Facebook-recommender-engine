@@ -13,16 +13,21 @@ services:
     environment:
       FLASK_APP: app.py
       FLASK_ENV: development
-    command: "flask run --host=0.0.0.0 --port=8080"
+    command: "flask run --host=0.0.0.0 --port=8080" #comen
   
   redis:
     image: redis
+    restart: always
+    user: root
+    environment:
+      REDIS_ARGS: --requirepass cookies
     ports:
       - "6379:6379"
     volumes:
       - ./redis-data:/data
     container_name: backprop-bunch-redis-container
   zookeeper:
+    user: root
     image: bitnami/zookeeper:latest
     restart: always
     ports:
@@ -34,6 +39,7 @@ services:
       - ./data_zookeeper_conf:/bitnami/zookeeper/conf
 
   kafka:
+    user: root
     image: bitnami/kafka:latest
     restart: always
     ports:
@@ -54,6 +60,7 @@ services:
       - zookeeper
 
   postgres:
+    user: root
     image: postgres:13.3
     restart: always
     ports:
@@ -66,8 +73,8 @@ services:
       - ./data_pg:/var/lib/postgresql/data
 
   pgadmin:
-    image: dpage/pgadmin4
     user: root
+    image: dpage/pgadmin4
     restart: always
     ports:
       - 5050:80

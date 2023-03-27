@@ -11,13 +11,15 @@ logger = logging.getLogger(__name__)
 redis_client = redis.Redis(
     host='backprop-bunch-redis-container',
     port=6379
+    # password='cookies'
 )
 
 
 def get_random_redis_item():
-    # Get all keys in the Redis database
-    all_keys = redis_client.keys()
-    logger.info(all_keys)
+    # redis_client.flushall()
+    # Get all keys in Redis
+    keys = redis_client.keys()
+    logger.info(keys)
 
     # Filter out non-hash keys
     hash_keys = [key for key in all_keys if redis_client.type(key) == b'hash']

@@ -4,11 +4,13 @@ from flask import Flask, request
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 import time
+from datetime import datetime
 import json
 import psycopg2
 from kafka_helpers import check_connection_status, delivery_report, create_kafka_producer, create_kafka_consumer, consume
 from redis_helpers import cache_redis_data, get_random_redis_item
 import threading
+import requests
 
 app = Flask(__name__)
 
@@ -52,11 +54,10 @@ def sendid():
     logger.info(f"User-Id: {user_id}")
     logger.info(f"Session-Id: {session_id}")
     time_stamp = time.time()
-
-    # cursor = conn.cursor()
-    # cursor.execute("INSERT INTO requests (user_id, session_id, time_stamp) VALUES (%s, %s,%s)",  (user_id, session_id, time_stamp))
-    # conn.commit()
-    # cursor.close()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO requests (user_id, session_id, time_stamp) VALUES (%s, %s,%s)",  (user_id, session_id, time_stamp))
+    conn.commit()
+    cursor.close()
     random_id = get_random_redis_item()
     if random_id is None:
         return '1211'
@@ -73,10 +74,12 @@ def evt():
     time_stamp = time.time()
 
     ## send to postgres
-    # cursor = conn.cursor()
-    # cursor.execute("INSERT INTO events (user_id, session_id, time_stamp, event_type) VALUES (%s, %s,%s, %s)",  (cur_usr, session, time_stamp, ev_type))
-    # conn.commit()
-    # cursor.close()
+
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO events (user_id, session_id, time_stamp, event_type) VALUES (%s, %s,%s, %s)",  (cur_usr, session, time_stamp, ev_type))
+    conn.commit()
+    cursor.close()
+
     # logger.info(f'Received evt POST request with data: {data}')
     # Send data to Kafka
     if producer is not None:
@@ -109,11 +112,11 @@ def item():
     bckt_key = data['bucket_key']
     time_stamp = time.time()
 
-    # cursor = conn.cursor()
+    cursor = conn.cursor()
     
-    # cursor.execute("INSERT INTO items (user_id, item_id, bucket_key, time_stamp, item_key, content_type) VALUES (%s, %s,%s, %s, %s, %s)",  (cur_usr, itm_id, bckt_key, time_stamp, itm_key,cnt_type))
-    # conn.commit()
-    # cursor.close()
+    cursor.execute("INSERT INTO items (user_id, item_id, bucket_key, time_stamp, item_key, content_type) VALUES (%s, %s,%s, %s, %s, %s)",  (cur_usr, itm_id, bckt_key, time_stamp, itm_key,cnt_type))
+    conn.commit()
+    cursor.close()
 
 
     redis_status = cache_redis_data(data['item_key'], data)
@@ -128,6 +131,44 @@ def item():
         return (f'Success and {redis_status}'), 200
     else:
         return (f'Error: No Brokers Available and {redis_status}'), 500
+
+
+@app.route('/items2db')
+def items2db(): 
+    logger.info("SCRAPING ITEMS")
+    url = "http://ec2-34-238-156-102.compute-1.amazonaws.com:7070/items"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        for item in data: 
+            time_stamp =int(time.mktime(datetime.strptime(item['created_at'], '%a, %d %b %Y %H:%M:%S %Z').timetuple()))
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO items (user_id, bucket_key, time_stamp, item_key, content_type) VALUES (%s, %s, %s, %s, %s)",  (item['user_id'], item['bucket_key'], time_stamp, item['item_key'],item['type']))
+            conn.commit()
+            cursor.close()
+        return "done"
+    else:
+        print(f"Error: {response.status_code} - {response.reason}")
+        return "error"
+    
+@app.route('/users2db')
+def users2db(): 
+    logger.info("SCRAPING USERS")
+    url = "http://ec2-34-238-156-102.compute-1.amazonaws.com:7070/users"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        for item in data: 
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO users (age, country, gender, user_id) VALUES (%s, %s, %s, %s)",  (item['age'], item['country'], item['gender'],item['id']))
+            conn.commit()
+            cursor.close()
+        return "done"
+    else:
+        print(f"Error: {response.status_code} - {response.reason}")
+        return "error"
+    
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
