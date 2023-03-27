@@ -3,3 +3,4 @@ psycopg2
 redis
 kafka-python
 confluent-kafka
+requests

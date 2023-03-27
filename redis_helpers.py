@@ -11,9 +11,12 @@ logger = logging.getLogger(__name__)
 redis_client = redis.Redis(
     host='backprop-bunch-redis-container',
     port=6379
+    # password='cookies'
+
 )
 
 def get_random_redis_item():
+    # redis_client.flushall()
     # Get all keys in Redis
     keys = redis_client.keys()
     logger.info(keys)
