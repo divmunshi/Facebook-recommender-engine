@@ -83,6 +83,17 @@ services:
       PGADMIN_DEFAULT_PASSWORD: backprop
     volumes:
       - ./data_admin:/var/lib/pgadmin
+  jupyter:
+    build:
+      context: .
+      dockerfile: ./Dockerfile-jupyter
+    container_name: jupyter
+    environment:
+      - JUPYTER_TOKEN=${JUPYTER_PASSWORD}
+    volumes:
+      - ./:/home/jovyan/work
+    ports:
+      - 8888:8888
 volumes:
   db:
     driver: local
