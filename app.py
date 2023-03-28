@@ -52,8 +52,10 @@ def sendid():
     logger.info(f"User-Id: {user_id}")
     logger.info(f"Session-Id: {session_id}")
     time_stamp = time.time()
+    sql_timestamp = datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
+    logger.info(sql_timestamp)
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO requests (user_id, session_id, time_stamp) VALUES (%s, %s,%s)",  (user_id, session_id, time_stamp))
+    cursor.execute("INSERT INTO requests (user_id, session_id, recieved_at) VALUES (%s, %s,%s)",  (str(user_id), str(session_id), sql_timestamp))
     conn.commit()
     cursor.close()
     random_id = get_random_redis_item()
@@ -73,17 +75,18 @@ def sendid():
 
 @app.route('/evt', methods=['POST'])
 def evt():
+    logger.info("EVENT RECIEVED")
     cur_usr = request.headers.get("user_id")
     session = request.headers.get("session_id")
     ev_type = request.headers.get("event_type")
     msg_log = f"User: {cur_usr} Session: {session} Type: {ev_type}"
-    # logger.info(msg_log)
+    logger.info(msg_log)
     time_stamp = time.time()
 
     ## send to postgres
 
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO events (user_id, session_id, time_stamp, event_type) VALUES (%s, %s,%s, %s)",  (cur_usr, session, time_stamp, ev_type))
+    cursor.execute("INSERT INTO events (user_id, session_id, created_at, event_type) VALUES (%s, %s,%s, %s)",  (cur_usr, session, time_stamp, ev_type))
     conn.commit()
     cursor.close()
 
@@ -119,7 +122,7 @@ def item():
 
     cursor = conn.cursor()
     
-    cursor.execute("INSERT INTO items (user_id, item_id, bucket_key, time_stamp, item_key, content_type) VALUES (%s, %s,%s, %s, %s, %s)",  (cur_usr, itm_id, bckt_key, time_stamp, itm_key,cnt_type))
+    cursor.execute("INSERT INTO items (user_id, item_id, bucket_key, created_at, item_key, content_type) VALUES (%s, %s,%s, %s, %s, %s)",  (cur_usr, itm_id, bckt_key, time_stamp, itm_key,cnt_type))
     conn.commit()
     cursor.close()
 
@@ -148,10 +151,10 @@ def items2db():
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
+        sql_timestamp = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         for item in data: 
-            time_stamp =int(time.mktime(datetime.strptime(item['created_at'], '%a, %d %b %Y %H:%M:%S %Z').timetuple()))
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO items (user_id, bucket_key, time_stamp, item_key, content_type) VALUES (%s, %s, %s, %s, %s)",  (item['user_id'], item['bucket_key'], time_stamp, item['item_key'],item['type']))
+            cursor.execute("INSERT INTO items (user_id, bucket_key, created_at, item_key, content_type) VALUES (COALESCE(%s, NULL), COALESCE(%s, NULL), COALESCE(CAST(%s AS TIMESTAMP), NULL), COALESCE(%s, NULL),COALESCE(%s, NULL))",  (str(item.get('user_id')), item.get('bucket_key'), sql_timestamp, item.get('item_key'), item.get('type')))
             conn.commit()
             cursor.close()
         return "done"
@@ -168,7 +171,7 @@ def users2db():
         data = response.json()
         for item in data: 
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO users (age, country, gender, user_id) VALUES (%s, %s, %s, %s)",  (item['age'], item['country'], item['gender'],item['id']))
+            cursor.execute("INSERT INTO users (age, country, gender, user_id) VALUES (COALESCE(CAST(%s AS INTEGER), NULL), COALESCE(%s, NULL), COALESCE(%s, NULL), COALESCE(%s, NULL))",  (item.get('age'), item.get('country'), item.get('gender'), item.get('id')))
             conn.commit()
             cursor.close()
         return "done"
