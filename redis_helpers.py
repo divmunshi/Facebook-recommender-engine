@@ -18,8 +18,8 @@ redis_client = redis.Redis(
 def get_random_redis_item():
     # redis_client.flushall()
     # Get all keys in Redis
-    keys = redis_client.keys()
-    logger.info(keys)
+    all_keys = redis_client.keys()
+    logger.info(all_keys)
 
     # Filter out non-hash keys
     hash_keys = [key for key in all_keys if redis_client.type(key) == b'hash']

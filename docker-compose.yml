@@ -70,7 +70,7 @@ services:
       POSTGRES_PASSWORD: backprop 
       POSTGRES_DB: backprop-bunch
     volumes:
-      - ./data_pg:/var/lib/postgresql/data
+      - vault:/var/lib/postgresql/data
 
   pgadmin:
     user: root
@@ -83,6 +83,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: backprop
     volumes:
       - ./data_admin:/var/lib/pgadmin
+
 volumes:
-  db:
+  vault:
     driver: local

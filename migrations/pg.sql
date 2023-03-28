@@ -1,14 +1,15 @@
 CREATE TABLE users (
-    user_id VARCHAR(255) PRIMARY KEY,
+    user_id VARCHAR(255),
     age INT,
     lang VARCHAR(50),
-    location VARCHAR(255),
+    country VARCHAR(255),
     created_at TIMESTAMP,
-    tag VARCHAR(255)
+    tag VARCHAR(255), 
+    gender VARCHAR(255)
 );
 
 CREATE TABLE sessions (
-    session_id VARCHAR(255) PRIMARY KEY,
+    session_id VARCHAR(255),
     user_id VARCHAR(255),
     session_end TIMESTAMP,
     session_start TIMESTAMP,
@@ -16,8 +17,14 @@ CREATE TABLE sessions (
     duration INTERVAL
 );
 
+CREATE TABLE events (
+    session_id VARCHAR(255),
+    user_id VARCHAR(255),
+    created_at TIMESTAMP, 
+    event_type VARCHAR(255)
+);
+
 CREATE TABLE items (
-    item_id VARCHAR(255) PRIMARY KEY,
     item_key VARCHAR(255),
     user_id VARCHAR(255),
     bucket_key VARCHAR(255),
@@ -27,13 +34,19 @@ CREATE TABLE items (
 );
 
 CREATE TABLE recommendations (
-    item_id VARCHAR(255),
     session_id VARCHAR(255),
     user_id VARCHAR(255),
     engagement_duration INTERVAL,
     is_final BOOLEAN,
     order_in_session INT,
-    sent_at TIMESTAMP
+    sent_at TIMESTAMP, 
+    recieved_at TIMESTAMP
+);
+
+CREATE TABLE requests (
+    user_id VARCHAR(255),
+    session_id VARCHAR(255),
+    recieved_at TIMESTAMP
 );
 
 CREATE INDEX idx_users_user_id ON users(user_id);
