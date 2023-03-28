@@ -35,12 +35,6 @@ def get_random_redis_item():
     # Return the selected value
     return str_value
 
-class CustomEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        return super().default(obj)
-
 def postgres_to_redis_if_empty():
     logger.info(redis_client.dbsize())
     # redis_client.flushall()
