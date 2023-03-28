@@ -19,13 +19,15 @@ services:
     image: redis
     restart: always
     user: root
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     environment:
-      REDIS_ARGS: --requirepass cookies
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - "6379:6379"
     volumes:
       - ./redis-data:/data
     container_name: backprop-bunch-redis-container
+  
   zookeeper:
     user: root
     image: bitnami/zookeeper:latest
@@ -82,7 +84,7 @@ services:
   test:
     build: .
     working_dir: /src
-    command: python -u pg_helpers.py
+    command: python -u pg_intervals.py
     volumes:
       - .:/src
     
@@ -112,12 +114,13 @@ services:
     volumes:
       - ./data_admin:/var/lib/pgadmin
   jupyter:
+    user: root
     build:
       context: .
       dockerfile: ./Dockerfile-jupyter
     container_name: jupyter
     environment:
-      - JUPYTER_TOKEN=${JUPYTER_PASSWORD}
+    - JUPYTER_TOKEN=${JUPYTER_PASSWORD}
     volumes:
       - ./:/home/jovyan/work
     ports:
