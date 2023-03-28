@@ -19,13 +19,15 @@ services:
     image: redis
     restart: always
     user: root
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     environment:
-      REDIS_PASSWORD: cookies-backprop
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - "6379:6379"
     volumes:
       - ./redis-data:/data
     container_name: backprop-bunch-redis-container
+  
   zookeeper:
     user: root
     image: bitnami/zookeeper:latest
@@ -70,7 +72,7 @@ services:
   test:
     build: .
     working_dir: /src
-    command: python -u pg_helpers.py
+    command: python -u pg_intervals.py
     volumes:
       - .:/src
     

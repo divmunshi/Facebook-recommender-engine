@@ -6,14 +6,22 @@ import random
 import json
 import psycopg2
 from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
+
+redis_password = os.getenv('REDIS_PASSWORD')
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+
 redis_client = redis.Redis(
     host='backprop-bunch-redis-container',
-    port=6379
-    password='cookies-backprop'
+    port=6379,
+    password=redis_password
 )
 
 
@@ -82,7 +90,7 @@ def cache_redis_data(id, data):
         # Serialize the data to a JSON-formatted string
         json_data = json.dumps(data)
         redis_client.hset(id, mapping=json_data)
-        redis_client.expire(id, 3600) # set expiry time for cache to 1 hour
+        # redis_client.expire(id, 3600) # set expiry time for cache to 1 hour
 
         # Return the response to the client
         return 'Success saving to redis'
