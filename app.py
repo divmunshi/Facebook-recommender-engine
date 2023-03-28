@@ -26,14 +26,14 @@ if check_connection_status('kafka', 9093):
     producer = create_kafka_producer('kafka', 9093)
 
 # Postgres
-conn = psycopg2.connect(
-    database="backprop-bunch",
-    user="root",
-    password="backprop",
-    host="postgres",
-    port="5432", 
-    application_name="app"
-)
+# conn = psycopg2.connect(
+#     database="backprop-bunch",
+#     user="root",
+#     password="backprop",
+#     host="postgres",
+#     port="5432", 
+#     application_name="app"
+# )
 
 @app.route('/', methods=['GET'])
 def sendid():
@@ -51,13 +51,13 @@ def sendid():
         producer.flush()
     logger.info(f"User-Id: {user_id}")
     logger.info(f"Session-Id: {session_id}")
-    time_stamp = time.time()
-    sql_timestamp = datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
-    logger.info(sql_timestamp)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO requests (user_id, session_id, recieved_at) VALUES (%s, %s,%s)",  (str(user_id), str(session_id), sql_timestamp))
-    conn.commit()
-    cursor.close()
+    # time_stamp = time.time()
+    # sql_timestamp = datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
+    # logger.info(sql_timestamp)
+    # cursor = conn.cursor()
+    # cursor.execute("INSERT INTO requests (user_id, session_id, recieved_at) VALUES (%s, %s,%s)",  (str(user_id), str(session_id), sql_timestamp))
+    # conn.commit()
+    # cursor.close()
     random_id = get_random_redis_item()
     if producer is not None:
         msg = json.dumps({
@@ -85,10 +85,10 @@ def evt():
 
     ## send to postgres
 
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO events (user_id, session_id, created_at, event_type) VALUES (%s, %s,%s, %s)",  (cur_usr, session, time_stamp, ev_type))
-    conn.commit()
-    cursor.close()
+    # cursor = conn.cursor()
+    # cursor.execute("INSERT INTO events (user_id, session_id, created_at, event_type) VALUES (%s, %s,%s, %s)",  (cur_usr, session, time_stamp, ev_type))
+    # conn.commit()
+    # cursor.close()
 
     # logger.info(f'Received evt POST request with data: {data}')
     # Send data to Kafka
@@ -120,11 +120,11 @@ def item():
     bckt_key = data['bucket_key']
     time_stamp = time.time()
 
-    cursor = conn.cursor()
+    # cursor = conn.cursor()
     
-    cursor.execute("INSERT INTO items (user_id, item_id, bucket_key, created_at, item_key, content_type) VALUES (%s, %s,%s, %s, %s, %s)",  (cur_usr, itm_id, bckt_key, time_stamp, itm_key,cnt_type))
-    conn.commit()
-    cursor.close()
+    # cursor.execute("INSERT INTO items (user_id, item_id, bucket_key, created_at, item_key, content_type) VALUES (%s, %s,%s, %s, %s, %s)",  (cur_usr, itm_id, bckt_key, time_stamp, itm_key,cnt_type))
+    # conn.commit()
+    # cursor.close()
 
 
     redis_status = cache_redis_data(data['item_key'], data)

@@ -4,10 +4,20 @@ import psycopg2
 from confluent_kafka import Consumer
 import logging
 import socket
+from datetime import datetime
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+conn = psycopg2.connect(
+    database="backprop-bunch",
+    user="root",
+    password="backprop",
+    host="postgres",
+    port="5432", 
+    application_name="app"
+)
 
 def check_connection_status(host, port):
     s = socket.socket()
