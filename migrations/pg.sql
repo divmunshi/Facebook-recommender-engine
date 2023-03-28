@@ -52,9 +52,9 @@ CREATE TABLE requests (
 CREATE TABLE logs (
     user_id VARCHAR(255),
     session_id VARCHAR(255),
-    recieved_at TIMESTAMP, 
+    evt_time TIMESTAMP, 
     event_type VARCHAR(255)
-) PARTITION BY RANGE(recieved_at);
+);
 
 CREATE INDEX idx_users_user_id ON users(user_id);
 CREATE INDEX idx_users_created_at ON users(created_at);

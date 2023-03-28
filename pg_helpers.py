@@ -1,7 +1,14 @@
 import time
 from datetime import datetime
+from datetime import timedelta
 import json
 import psycopg2
+from psycopg2 import sql
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 conn = psycopg2.connect(
     database="backprop-bunch",
@@ -20,21 +27,27 @@ def create_insert_sql(item_dict, table):
     sql.Literal(item_dict["event_type"] )### may have to add event type to request dict
 )
     
-def create_subtable_sql(item_dict, table):
+def create_subtable_sql(msg, table):
+    logger.info(msg, table)
+    msg_dict = msg
+    evt_datetime = datetime.fromtimestamp(msg_dict['evt_time'])
     cursor = conn.cursor()
-    table_name = f"requests_{item_dict['recieved_at'].strftime('%Y%m%d%H')}"
+    table_name = f"requests_{evt_datetime.strftime('%Y%m%d%H')}"
     create_table_sql = psycopg2.sql.SQL("""
-    CREATE TABLE IF NOT EXISTS {table_name} (
-        CHECK (recieved_at >= {start_time} AND recieved_at < {end_time})
-    ) INHERITS (requests);
+    CREATE TABLE IF NOT EXISTS {table_name} PARTITION OF {parent_table}(
+        CONSTRAINT {constraint_name} CHECK (evt_time >= {start_time} AND evt_time < {end_time})
+    );
     """).format(
     table_name=sql.Identifier(table_name),
-    start_time=sql.Literal(item_dict["recieved_at"]),
-    end_time=sql.Literal(item_dict["recieved_at"] + timedelta(hours=1))
-    cursor.execute(insert_sql)
+    start_time=sql.Literal(msg_dict["evt_time"]),
+    end_time=sql.Literal(evt_datetime + timedelta(hours=1)),
+    parent_table = sql.Identifier(table), 
+    constraint_name=sql.Identifier(f"{table_name}_check"))
+
+    cursor.execute(create_table_sql)
     conn.commit()   
     cursor.close()
-)
-    
 
-create_subtable_sql()
+    
+json_test = {'user_id': '6023', 'session_id': '9f6a7ca1-92b2-426c-9761-74d0803f82f6', 'evt_time': 1680002210.182431, 'evt_type': 'return_reco'}
+create_subtable_sql(json_test, "logs")

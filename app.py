@@ -8,7 +8,7 @@ from datetime import datetime
 import json
 import psycopg2
 from kafka_helpers import check_connection_status, delivery_report, create_kafka_producer, create_kafka_consumer, consume
-from redis_helpers import cache_redis_data, get_random_redis_item
+from redis_helpers import cache_redis_data, get_random_redis_item, postgres_to_redis_if_empty
 import threading
 import requests
 
@@ -35,8 +35,9 @@ if check_connection_status('kafka', 9093):
 #     application_name="app"
 # )
 
-@app.route('/', methods=['GET'])
+@app.route('/')
 def sendid():
+    postgres_to_redis_if_empty()
     logger.info("ITEM REQUESTED")
     user_id = request.headers.get('User-Id')
     session_id = request.headers.get('Session-Id')
@@ -47,7 +48,7 @@ def sendid():
         "evt_time": time.time(),
         "evt_type": "ask_reco"
         })
-        producer.produce('log_fct_evt', value=serialized_data, key=None, callback=delivery_report)
+        producer.produce('log_fct_evt', value=msg, key=None, callback=delivery_report)
         producer.flush()
     logger.info(f"User-Id: {user_id}")
     logger.info(f"Session-Id: {session_id}")
@@ -66,7 +67,7 @@ def sendid():
         "evt_time": time.time(),
         "evt_type": "return_reco"
         })
-        producer.produce('log_fct_evt', value=serialized_data, key=None, callback=delivery_report)
+        producer.produce('log_fct_evt', value=msg, key=None, callback=delivery_report)
         producer.flush()
     if random_id is None:
         return '1211'
@@ -94,12 +95,12 @@ def evt():
     # Send data to Kafka
     if producer is not None:
             msg = json.dumps({
-            "user_id": user_id,
-            "session_id": session_id,
+            "user_id": request.headers.get("user_id"),
+            "session_id": session,
             "evt_time": time.time(),
             "evt_type": ev_type
             })
-            producer.produce('log_fct_evt', value=serialized_data, key=None, callback=delivery_report)
+            producer.produce('log_fct_evt', value=msg, key=None, callback=delivery_report)
             producer.flush()
             return "success", 200
     else:
@@ -132,12 +133,12 @@ def item():
     # Send data to Kafka
     if producer is not None:
             msg = json.dumps({
-            "user_id": cur_usr,
+            "user_id":  data['user_id'],
             "session_id": "NA",
             "evt_time": time_stamp,
             "evt_type": 'item_created'
             })
-            producer.produce('log_fct_evt', value=serialized_data, key=None, callback=delivery_report)
+            producer.produce('log_fct_evt', value=msg, key=None, callback=delivery_report)
             producer.flush()
             return "success", 200
     else:

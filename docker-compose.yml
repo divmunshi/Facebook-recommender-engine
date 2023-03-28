@@ -67,6 +67,13 @@ services:
       - .:/src
     depends_on:
       - kafka
+  test:
+    build: .
+    working_dir: /src
+    command: python -u pg_helpers.py
+    volumes:
+      - .:/src
+    
 
   postgres:
     user: root

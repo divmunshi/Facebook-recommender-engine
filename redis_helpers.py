@@ -4,6 +4,8 @@ import redis
 import logging
 import random
 import json
+import psycopg2
+from datetime import datetime
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,33 +18,54 @@ redis_client = redis.Redis(
 
 
 def get_random_redis_item():
-    # redis_client.flushall()
-    # Get all keys in Redis
-    all_keys = redis_client.keys()
-    logger.info(all_keys)
+    # Get all values in Redis for the "item_key" field
+    all_values = redis_client.hvals('items')
 
-    # Filter out non-hash keys
-    hash_keys = [key for key in all_keys if redis_client.type(key) == b'hash']
-    logger.info(hash_keys)
-    # If there are no hash keys, return None
-    if not hash_keys:
+    # If there are no values, return None
+    if not all_values:
         return None
 
-    # Select a random hash key
-    random_hash_key = random.choice(hash_keys)
+    # Select a random value
+    random_value = random.choice(all_values)
 
-    # Decode the hash key from bytes to a regular string
-    str_hash_key = random_hash_key.decode('utf-8')
-    logger.info(str_hash_key)
+    # Decode the value from bytes to a regular string
+    str_value = random_value.decode('utf-8')
+    logger.info(str_value)
 
-    # Get the hash data for the selected key
-    # hash_data = redis_client.hgetall(str_hash_key)
+    # Return the selected value
+    return str_value
 
-    # Extract the item_key field from the hash and return it
-    # item_key = hash_data.get(b'item_key', None)
-    # string_key = item_key.decode('utf-8')
-    # logger.info(string_key)
-    return str_hash_key
+class CustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
+
+def postgres_to_redis_if_empty():
+    logger.info(redis_client.dbsize())
+    # redis_client.flushall()
+    if redis_client.dbsize() == 0:
+        logger.info('in here 2')
+        # Redis is empty, so we need to fetch data from Postgres and save to Redis
+        conn = psycopg2.connect(
+            database="backprop-bunch",
+            user="root",
+            password="backprop",
+            host="postgres",
+            port="5432",
+            application_name="app"
+        )
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM items ORDER BY created_at DESC LIMIT 1000")
+        rows = cur.fetchall()
+        # logger.info(rows)
+        for row in rows:
+            item_key = row[0] # assuming the first column is the key
+            data = row[1:] # assuming the rest of the columns are the data
+            redis_client.hset('items', 'item_key', item_key)
+            logger.info('Added everything to redis')
+    else:
+        logger.info('Redis has data so adding nothing')
 
 
 def cache_redis_data(id, data):
