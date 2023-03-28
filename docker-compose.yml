@@ -59,6 +59,15 @@ services:
     depends_on:
       - zookeeper
 
+  worker:
+    build: .
+    working_dir: /src
+    command: python -u kafka-consumers/worker-logging.py
+    volumes:
+      - .:/src
+    depends_on:
+      - kafka
+
   postgres:
     user: root
     image: postgres:13.3
