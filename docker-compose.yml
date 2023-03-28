@@ -59,6 +59,15 @@ services:
     depends_on:
       - zookeeper
 
+  worker:
+    build: .
+    working_dir: /src
+    command: python -u kafka-consumers/worker-logging.py
+    volumes:
+      - .:/src
+    depends_on:
+      - kafka
+
   postgres:
     user: root
     image: postgres:13.3
@@ -83,7 +92,17 @@ services:
       PGADMIN_DEFAULT_PASSWORD: backprop
     volumes:
       - ./data_admin:/var/lib/pgadmin
-
+  jupyter:
+    build:
+      context: .
+      dockerfile: ./Dockerfile-jupyter
+    container_name: jupyter
+    environment:
+      - JUPYTER_TOKEN=${JUPYTER_PASSWORD}
+    volumes:
+      - ./:/home/jovyan/work
+    ports:
+      - 8888:8888
 volumes:
   vault:
     driver: local

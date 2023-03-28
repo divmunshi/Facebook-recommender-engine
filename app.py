@@ -20,47 +20,54 @@ logger = logging.getLogger(__name__)
 
 
 # Check Kafka connection status
-event_consumer = None
-item_consumer = None
 producer = None
 
 if check_connection_status('kafka', 9093):
     producer = create_kafka_producer('kafka', 9093)
-    item_consumer = create_kafka_consumer('kafka', 9093, 'item_group', 'item')
-    event_consumer = create_kafka_consumer('kafka', 9093, 'evt_group', 'evt')
-    # start the consumer threads
-    if item_consumer is not None:
-        item_thread = threading.Thread(target=consume, args=(item_consumer,))
-        item_thread.start()
-    if event_consumer is not None:
-        event_thread = threading.Thread(target=consume, args=(event_consumer,))
-        event_thread.start()
 
 # Postgres
-conn = psycopg2.connect(
-    database="backprop-bunch",
-    user="root",
-    password="backprop",
-    host="postgres",
-    port="5432", 
-    application_name="app"
-)
+# conn = psycopg2.connect(
+#     database="backprop-bunch",
+#     user="root",
+#     password="backprop",
+#     host="postgres",
+#     port="5432", 
+#     application_name="app"
+# )
 
 @app.route('/', methods=['GET'])
 def sendid():
     logger.info("ITEM REQUESTED")
     user_id = request.headers.get('User-Id')
     session_id = request.headers.get('Session-Id')
+    if producer is not None:
+        msg = json.dumps({
+        "user_id": user_id,
+        "session_id": session_id,
+        "evt_time": time.time(),
+        "evt_type": "ask_reco"
+        })
+        producer.produce('log_fct_evt', value=serialized_data, key=None, callback=delivery_report)
+        producer.flush()
     logger.info(f"User-Id: {user_id}")
     logger.info(f"Session-Id: {session_id}")
-    time_stamp = time.time()
-    sql_timestamp = datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
-    logger.info(sql_timestamp)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO requests (user_id, session_id, recieved_at) VALUES (%s, %s,%s)",  (str(user_id), str(session_id), sql_timestamp))
-    conn.commit()
-    cursor.close()
+    # time_stamp = time.time()
+    # sql_timestamp = datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
+    # logger.info(sql_timestamp)
+    # cursor = conn.cursor()
+    # cursor.execute("INSERT INTO requests (user_id, session_id, recieved_at) VALUES (%s, %s,%s)",  (str(user_id), str(session_id), sql_timestamp))
+    # conn.commit()
+    # cursor.close()
     random_id = get_random_redis_item()
+    if producer is not None:
+        msg = json.dumps({
+        "user_id": user_id,
+        "session_id": session_id,
+        "evt_time": time.time(),
+        "evt_type": "return_reco"
+        })
+        producer.produce('log_fct_evt', value=serialized_data, key=None, callback=delivery_report)
+        producer.flush()
     if random_id is None:
         return '1211'
     logger.info(f"Random id being returned: {random_id}")
@@ -78,27 +85,25 @@ def evt():
 
     ## send to postgres
 
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO events (user_id, session_id, created_at, event_type) VALUES (%s, %s,%s, %s)",  (cur_usr, session, time_stamp, ev_type))
-    conn.commit()
-    cursor.close()
+    # cursor = conn.cursor()
+    # cursor.execute("INSERT INTO events (user_id, session_id, created_at, event_type) VALUES (%s, %s,%s, %s)",  (cur_usr, session, time_stamp, ev_type))
+    # conn.commit()
+    # cursor.close()
 
     # logger.info(f'Received evt POST request with data: {data}')
     # Send data to Kafka
     if producer is not None:
-        message = {
-            "user_id": cur_usr,
-            "session_id": session,
-            "event_type": ev_type
-        }
-        serialized_data = json.dumps(message).encode('utf-8')
-        producer.produce('evt', value=serialized_data, key=None, callback=delivery_report)
-        producer.flush()
-        if event_consumer is not None:
-            consume(event_consumer)
-        return 'Success'
+            msg = json.dumps({
+            "user_id": user_id,
+            "session_id": session_id,
+            "evt_time": time.time(),
+            "evt_type": ev_type
+            })
+            producer.produce('log_fct_evt', value=serialized_data, key=None, callback=delivery_report)
+            producer.flush()
+            return "success", 200
     else:
-        return 'Error: No Brokers Available', 500
+        return (f'Error with evt producer'), 500
  
 
 @app.route('/item', methods=['POST'])
@@ -115,25 +120,28 @@ def item():
     bckt_key = data['bucket_key']
     time_stamp = time.time()
 
-    cursor = conn.cursor()
+    # cursor = conn.cursor()
     
-    cursor.execute("INSERT INTO items (user_id, item_id, bucket_key, created_at, item_key, content_type) VALUES (%s, %s,%s, %s, %s, %s)",  (cur_usr, itm_id, bckt_key, time_stamp, itm_key,cnt_type))
-    conn.commit()
-    cursor.close()
+    # cursor.execute("INSERT INTO items (user_id, item_id, bucket_key, created_at, item_key, content_type) VALUES (%s, %s,%s, %s, %s, %s)",  (cur_usr, itm_id, bckt_key, time_stamp, itm_key,cnt_type))
+    # conn.commit()
+    # cursor.close()
 
 
     redis_status = cache_redis_data(data['item_key'], data)
 
     # Send data to Kafka
     if producer is not None:
-        message = data
-        # Serialize the data
-        serialized_data = json.dumps(message).encode('utf-8')
-        producer.produce('item', value=serialized_data, key=None, callback=delivery_report)
-        producer.flush()
-        return (f'Success and {redis_status}'), 200
+            msg = json.dumps({
+            "user_id": cur_usr,
+            "session_id": "NA",
+            "evt_time": time_stamp,
+            "evt_type": 'item_created'
+            })
+            producer.produce('log_fct_evt', value=serialized_data, key=None, callback=delivery_report)
+            producer.flush()
+            return "success", 200
     else:
-        return (f'Error: No Brokers Available and {redis_status}'), 500
+        return (f'Error with evt producer'), 500
 
 
 @app.route('/items2db')
