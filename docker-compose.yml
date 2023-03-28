@@ -20,7 +20,7 @@ services:
     restart: always
     user: root
     environment:
-      REDIS_ARGS: --requirepass cookies
+      REDIS_PASSWORD: cookies-backprop
     ports:
       - "6379:6379"
     volumes:
@@ -100,12 +100,13 @@ services:
     volumes:
       - ./data_admin:/var/lib/pgadmin
   jupyter:
+    user: root
     build:
       context: .
       dockerfile: ./Dockerfile-jupyter
     container_name: jupyter
     environment:
-      - JUPYTER_TOKEN=${JUPYTER_PASSWORD}
+    - JUPYTER_TOKEN=${JUPYTER_PASSWORD}
     volumes:
       - ./:/home/jovyan/work
     ports:
