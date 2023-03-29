@@ -8,7 +8,7 @@ from datetime import datetime
 import json
 import psycopg2
 from kafka_helpers import check_connection_status, delivery_report, create_kafka_producer, create_kafka_consumer, consume
-from redis_helpers import cache_redis_data, get_random_redis_item, postgres_to_redis_if_empty, add_user_history_to_redis, get_user_history_from_redis, user_has_seen_item, update_user_history_in_redis
+from redis_helpers import cache_redis_data, get_random_redis_item, postgres_to_redis_if_empty
 import threading
 import requests
 
@@ -25,27 +25,18 @@ producer = None
 if check_connection_status('kafka', 9093):
     producer = create_kafka_producer('kafka', 9093)
 
-@app.route('/testtest')
-def redistests():
-    # user_id = 'brvhjberjh'
-    # session_id = 'hwevui2448738'
-    # update_user_history_in_redis(user_id, session_id, "gjhddevwjw", 200)
-    # user_history = get_user_history_from_redis(user_id)
-    # # logger.info(user_history)
-    # # logger.info(user_history)
-    # item_seen = user_has_seen_item(user_id, "gewhvfejw", max_sessions=10)
-    # logger.info(f"item seen is {item_seen}")
-    # new_req_data = {
-    #     "evt_time": time.time(),
-    #     "recommendation_time": time.time(),
-    #     "recommendation_key": "gjhddevwjw"
-    #     }
-    # add_user_history_to_redis(user_id, session_id, new_req_data)
-    return 'ok', 200
+# Postgres
+# conn = psycopg2.connect(
+#     database="backprop-bunch",
+#     user="root",
+#     password="backprop",
+#     host="postgres",
+#     port="5432", 
+#     application_name="app"
+# )
 
 @app.route('/')
 def sendid():
-    time_requested = time.time()
     postgres_to_redis_if_empty()
     logger.info("ITEM REQUESTED")
     user_id = request.headers.get('User-Id')
@@ -54,49 +45,34 @@ def sendid():
         msg = json.dumps({
         "user_id": user_id,
         "session_id": session_id,
-        "evt_time": time_requested,
+        "evt_time": time.time(),
         "evt_type": "ask_reco"
         })
         producer.produce('log_fct_evt', value=msg, key=None, callback=delivery_report)
         producer.flush()
     logger.info(f"User-Id: {user_id}")
     logger.info(f"Session-Id: {session_id}")
-    while True:
-        # get a random item from Redis
-        random_item = get_random_redis_item()
-
-        # check if the user has seen the item
-        result = user_has_seen_item(user_id, random_item, max_sessions=10)
-        if random_item is None:
-            print("No item keys in redis")
-            break
-        elif result:
-            print(f"User {user_id} has seen item {random_item}.")
-        else:
-            print(f"User {user_id} has NOT seen item {random_item}.")
-            break
-
-    recommendation_time = time.time()
+    # time_stamp = time.time()
+    # sql_timestamp = datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
+    # logger.info(sql_timestamp)
+    # cursor = conn.cursor()
+    # cursor.execute("INSERT INTO requests (user_id, session_id, recieved_at) VALUES (%s, %s,%s)",  (str(user_id), str(session_id), sql_timestamp))
+    # conn.commit()
+    # cursor.close()
+    random_id = get_random_redis_item()
     if producer is not None:
         msg = json.dumps({
         "user_id": user_id,
         "session_id": session_id,
-        "evt_time": recommendation_time,
-        "evt_type": "return_reco",
+        "evt_time": time.time(),
+        "evt_type": "return_reco"
         "recommendation": random_id
         })
         producer.produce('log_fct_evt', value=msg, key=None, callback=delivery_report)
         producer.flush()
     if random_id is None:
         return '1211'
-    
     logger.info(f"Random id being returned: {random_id}")
-    new_req_data = {
-        "time_requested": time_requested,
-        "recommendation_time": recommendation_time,
-        "recommendation_key": random_id
-        }
-    add_user_history_to_redis(user_id, session_id, new_req_data)
     return random_id
 
 @app.route('/evt', methods=['POST'])
@@ -108,6 +84,15 @@ def evt():
     msg_log = f"User: {cur_usr} Session: {session} Type: {ev_type}"
     logger.info(msg_log)
     time_stamp = time.time()
+
+    ## send to postgres
+
+    # cursor = conn.cursor()
+    # cursor.execute("INSERT INTO events (user_id, session_id, created_at, event_type) VALUES (%s, %s,%s, %s)",  (cur_usr, session, time_stamp, ev_type))
+    # conn.commit()
+    # cursor.close()
+
+    # logger.info(f'Received evt POST request with data: {data}')
     # Send data to Kafka
     if producer is not None:
             msg = json.dumps({
@@ -137,7 +122,14 @@ def item():
     bckt_key = data['bucket_key']
     time_stamp = time.time()
 
-    # redis_status = cache_redis_data(data['item_key'], data)
+    # cursor = conn.cursor()
+    
+    # cursor.execute("INSERT INTO items (user_id, item_id, bucket_key, created_at, item_key, content_type) VALUES (%s, %s,%s, %s, %s, %s)",  (cur_usr, itm_id, bckt_key, time_stamp, itm_key,cnt_type))
+    # conn.commit()
+    # cursor.close()
+
+
+    redis_status = cache_redis_data(data['item_key'], data)
 
     # Send data to Kafka
     if producer is not None:
