@@ -38,13 +38,14 @@ def check_connection_status(host, port):
 def insert_logs(item_dict, table):
     
     cursor = conn.cursor()
-    insert_sql = psycopg2.sql.SQL("INSERT INTO {} (user_id, session_id, evt_time, event_type) VALUES ({}, {}, CAST({} AS TIMESTAMP), {})").format(
+    insert_sql = psycopg2.sql.SQL("INSERT INTO {} (user_id, session_id, evt_time, event_type, recommendation) VALUES ({}, {}, CAST({} AS TIMESTAMP), {}, COALESCE({}, NULL))").format(
     sql.Identifier(table),
     sql.Literal(item_dict["user_id"]),
     sql.Literal(item_dict["session_id"]),
     sql.Literal(psycopg2.TimestampFromTicks(item_dict["evt_time"])),
-    sql.Literal(item_dict["evt_type"] ))### may have to add event type to request dict
-
+    sql.Literal(item_dict["evt_type"] ),
+    sql.Literal(item_dict["recommendation"] if item_dict.get("recommendation") is not None else None)
+    )
     cursor.execute(insert_sql)
     conn.commit()   
     cursor.close()

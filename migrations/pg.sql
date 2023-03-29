@@ -53,7 +53,8 @@ CREATE TABLE logs (
     user_id VARCHAR(255),
     session_id VARCHAR(255),
     evt_time TIMESTAMP, 
-    event_type VARCHAR(255)
+    event_type VARCHAR(255), 
+    recommendation VARCHAR(255)
 ) PARTITION BY RANGE(evt_time);
 
 CREATE INDEX idx_users_user_id ON users(user_id);

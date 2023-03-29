@@ -65,7 +65,8 @@ def sendid():
         "user_id": user_id,
         "session_id": session_id,
         "evt_time": time.time(),
-        "evt_type": "return_reco"
+        "evt_type": "return_reco",
+        "recommendation": random_id
         })
         producer.produce('log_fct_evt', value=msg, key=None, callback=delivery_report)
         producer.flush()
