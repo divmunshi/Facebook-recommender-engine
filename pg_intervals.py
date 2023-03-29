@@ -57,7 +57,7 @@ def job():
                     interval_timestamp = datetime.timestamp(
                         result[i+1]['evt_time'])-datetime.timestamp(result[i]['evt_time'])
                     update_user_history_in_redis(
-                        result[i]["user_id"], result[i]["session_id"], result[i]["recommendation"], interval_timestamp)
+                        result[i]["user_id"], result[i]["session_id"], result[i]["recommendation"], interval_timestamp.strftime('%Y-%m-%d %H:%M:%S.%f'))
                     received_at = result[i-1]['evt_time']
                     sent_at = result[i]['evt_time']
                     latency_timestamp = datetime.timestamp(

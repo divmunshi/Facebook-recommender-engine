@@ -29,7 +29,7 @@ def redistests():
     # user_id = 'brvhjberjh'
     # session_id = 'hwevui2448738'
     # update_user_history_in_redis(user_id, session_id, "gjhddevwjw", 200)
-    user_history = get_user_history_from_redis(314)
+    user_history = get_user_history_from_redis(36388)
     logger.info(user_history)
     # # logger.info(user_history)
     # item_seen = user_has_seen_item(user_id, "gewhvfejw", max_sessions=10)
