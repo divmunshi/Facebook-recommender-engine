@@ -13,7 +13,7 @@ services:
     environment:
       FLASK_APP: app.py
       FLASK_ENV: development
-    command: "flask run --host=0.0.0.0 --port=8080" #comen
+    command: "flask run --host=0.0.0.0 --port=8080" 
   
   redis:
     image: redis
@@ -61,6 +61,18 @@ services:
     depends_on:
       - zookeeper
 
+  kafka-ui:
+      container_name: kafka-ui
+      image: provectuslabs/kafka-ui:latest
+      ports:
+        - "9080:8080"
+      depends_on:
+        - kafka
+      environment:
+        - KAFKA_CLUSTERS_0_NAME=local
+        - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9093
+        - DYNAMIC_CONFIG_ENABLED=true
+        
   worker:
     build: .
     working_dir: /src
