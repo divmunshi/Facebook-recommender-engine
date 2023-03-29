@@ -36,11 +36,13 @@ CREATE TABLE items (
 CREATE TABLE recommendations (
     session_id VARCHAR(255),
     user_id VARCHAR(255),
-    engagement_duration INTERVAL,
+    engagement_duration TIMESTAMP,
     is_final BOOLEAN,
     order_in_session INT,
     sent_at TIMESTAMP, 
-    recieved_at TIMESTAMP
+    recieved_at TIMESTAMP, 
+    item_key VARCHAR(255), 
+    latency TIMESTAMP
 );
 
 CREATE TABLE requests (

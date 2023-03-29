@@ -5,3 +5,4 @@ confluent-kafka
 requests
 python-dotenv
 psycopg2
+schedule
