@@ -1,5 +1,6 @@
 # redis_helpers.py
 
+import os
 import redis
 import logging
 import random
@@ -9,13 +10,11 @@ from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
-import os
 
 redis_password = os.getenv('REDIS_PASSWORD')
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 
 redis_client = redis.Redis(
@@ -27,7 +26,9 @@ redis_client = redis.Redis(
 
 def get_random_redis_item():
     # Get all values in Redis for the "item_key" field
-    all_values = redis_client.hvals('items')
+    all_values = redis_client.hkeys('items')
+    # logger.info(all_values)
+    # all_values = [key.decode() for key in all_values]
 
     # If there are no values, return None
     if not all_values:
@@ -36,12 +37,12 @@ def get_random_redis_item():
     # Select a random value
     random_value = random.choice(all_values)
 
-    # Decode the value from bytes to a regular string
+    # Decode the selected value from bytes to a regular string
     str_value = random_value.decode('utf-8')
-    logger.info(str_value)
 
-    # Return the selected value
+    # Return the selected value as a string
     return str_value
+
 
 def postgres_to_redis_if_empty():
     logger.info(redis_client.dbsize())
@@ -62,9 +63,9 @@ def postgres_to_redis_if_empty():
         rows = cur.fetchall()
         # logger.info(rows)
         for row in rows:
-            item_key = row[0] # assuming the first column is the key
-            data = row[1:] # assuming the rest of the columns are the data
-            redis_client.hset('items', 'item_key', item_key)
+            item_key = row[0]  # assuming the first column is the key
+            data = row[1:]  # assuming the rest of the columns are the data
+            redis_client.hset('items', item_key, item_key)
             logger.info('Added everything to redis')
     else:
         logger.info('Redis has data so adding nothing')
@@ -73,8 +74,8 @@ def postgres_to_redis_if_empty():
 def cache_redis_data(id, data):
     # Check if data is already in Redis cache
     if isinstance(id, bytes):
-            # If so, decode it to a regular string
-            id = id.decode('utf-8')
+        # If so, decode it to a regular string
+        id = id.decode('utf-8')
     cached_response = redis_client.hgetall(id)
     logger.info(data)
     logger.info(id)
@@ -94,4 +95,3 @@ def cache_redis_data(id, data):
 
         # Return the response to the client
         return 'Success saving to redis'
-
