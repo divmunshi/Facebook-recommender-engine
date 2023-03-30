@@ -26,7 +26,7 @@ if check_connection_status('kafka', 9093):
 
 @app.route('/testtest')
 def redistests():
-    postgres_to_redis_if_empty()
+    # postgres_to_redis_if_empty()
     # user_id = 'brvhjberjh'
     # session_id = 'hwevui2448738'
     # update_user_history_in_redis(user_id, session_id, "gjhddevwjw", 200)
@@ -47,7 +47,7 @@ def redistests():
 @app.route('/')
 def sendid():
     time_requested = time.time()
-    postgres_to_redis_if_empty()
+    # postgres_to_redis_if_empty()
     logger.info("ITEM REQUESTED")
     user_id = request.headers.get('User-Id')
     session_id = request.headers.get('Session-Id')
