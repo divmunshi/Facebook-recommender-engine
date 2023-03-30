@@ -26,11 +26,12 @@ if check_connection_status('kafka', 9093):
 
 @app.route('/testtest')
 def redistests():
+    postgres_to_redis_if_empty()
     # user_id = 'brvhjberjh'
     # session_id = 'hwevui2448738'
     # update_user_history_in_redis(user_id, session_id, "gjhddevwjw", 200)
-    user_history = get_user_history_from_redis(36388)
-    logger.info(user_history)
+    # user_history = get_user_history_from_redis(36388)
+    # logger.info(user_history)
     # # logger.info(user_history)
     # item_seen = user_has_seen_item(user_id, "gewhvfejw", max_sessions=10)
     # logger.info(f"item seen is {item_seen}")
@@ -46,7 +47,7 @@ def redistests():
 @app.route('/')
 def sendid():
     time_requested = time.time()
-    # postgres_to_redis_if_empty()
+    postgres_to_redis_if_empty()
     logger.info("ITEM REQUESTED")
     user_id = request.headers.get('User-Id')
     session_id = request.headers.get('Session-Id')
@@ -64,7 +65,7 @@ def sendid():
     logger.info(f"Session-Id: {session_id}")
     while True:
         # get a random item from Redis
-    random_item = get_random_redis_item()
+        random_item = get_random_redis_item()
 
         # check if the user has seen the item
         result = user_has_seen_item(user_id, random_item, max_sessions=10)
@@ -91,13 +92,13 @@ def sendid():
         producer.flush()
     if random_item is None:
         return '1211'
-    
+
     logger.info(f"Random id being returned: {random_item}")
     new_req_data = {
         "time_requested": time_requested,
         "recommendation_time": recommendation_time,
         "recommendation_key": random_item
-        }
+    }
     add_user_history_to_redis(user_id, session_id, new_req_data)
     return random_item
 
@@ -153,7 +154,6 @@ def item():
 
     add_item_to_redis(data)
 
-
     # Send data to Kafka
     if producer is not None:
         msg = json.dumps({
@@ -181,14 +181,15 @@ def items2db():
             time.time()).strftime('%Y-%m-%d %H:%M:%S')
         for item in data:
             add_item_to_redis(item)
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO items (user_id, bucket_key, created_at, item_key, content_type) VALUES (COALESCE(%s, NULL), COALESCE(%s, NULL), COALESCE(CAST(%s AS TIMESTAMP), NULL), COALESCE(%s, NULL),COALESCE(%s, NULL))",  (str(
-                item.get('user_id')), item.get('bucket_key'), sql_timestamp, item.get('item_key'), item.get('type')))
-            conn.commit()
-            cursor.close()
+            logger.info(item)
+            # cursor = conn.cursor()
+            # cursor.execute("INSERT INTO items (user_id, bucket_key, created_at, item_key, content_type) VALUES (COALESCE(%s, NULL), COALESCE(%s, NULL), COALESCE(CAST(%s AS TIMESTAMP), NULL), COALESCE(%s, NULL),COALESCE(%s, NULL))",  (str(
+            #     item.get('user_id')), item.get('bucket_key'), sql_timestamp, item.get('item_key'), item.get('type')))
+            # conn.commit()
+            # cursor.close()
         return "done"
     else:
-    #     print(f"Error: {response.status_code} - {response.reason}")
+        #     print(f"Error: {response.status_code} - {response.reason}")
         return "error"
 
 
