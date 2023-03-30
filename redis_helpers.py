@@ -87,7 +87,7 @@ def user_has_seen_item(user_id, item_id, max_sessions=10):
     return False
 
 
-def get_random_redis_item():
+def get_random_redis_item(excluded_keys=[]):
     # get a random item from the set of all item keys
     random_key_bytes = redis_client.srandmember('item-keys')
 
@@ -104,6 +104,18 @@ def add_item_to_redis(data):
     item_data = redis_client.hgetall(key)
     redis_client.sadd('item-keys', key)
     # logger.info(item_data)
+
+
+def get_user_recommendation_keys(user_id, max_sessions=10):
+    session_ids = redis_client.hkeys(user_id)
+    session_ids.reverse()
+    keys = []
+    for session_id in session_ids[:max_sessions]:
+        session_data = json.loads(redis_client.hget(
+            user_id, session_id).decode('utf-8'))
+        for req_data in session_data:
+            keys.append(req_data.get('recommendation_key'))
+    return keys
 
 
 def postgres_to_redis_if_empty():
