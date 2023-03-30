@@ -8,7 +8,7 @@ from datetime import datetime
 import json
 import psycopg2
 from kafka_helpers import check_connection_status, delivery_report, create_kafka_producer, create_kafka_consumer, consume
-from redis_helpers import cache_redis_data, get_random_redis_item, postgres_to_redis_if_empty, add_user_history_to_redis, get_user_history_from_redis, user_has_seen_item, update_user_history_in_redis
+from redis_helpers import cache_redis_data, get_random_redis_item, postgres_to_redis_if_empty, add_user_history_to_redis, get_user_history_from_redis, user_has_seen_item, update_user_history_in_redis, add_item_to_redis
 import threading
 import requests
 
@@ -46,7 +46,7 @@ def redistests():
 @app.route('/')
 def sendid():
     time_requested = time.time()
-    postgres_to_redis_if_empty()
+    # postgres_to_redis_if_empty()
     logger.info("ITEM REQUESTED")
     user_id = request.headers.get('User-Id')
     session_id = request.headers.get('Session-Id')
@@ -63,7 +63,7 @@ def sendid():
     logger.info(f"Session-Id: {session_id}")
     while True:
         # get a random item from Redis
-        random_item = get_random_redis_item()
+    random_item = get_random_redis_item()
 
         # check if the user has seen the item
         result = user_has_seen_item(user_id, random_item, max_sessions=10)
@@ -87,17 +87,17 @@ def sendid():
         })
         producer.produce('log_fct_evt', value=msg, key=None, callback=delivery_report)
         producer.flush()
-    if random_id is None:
+    if random_item is None:
         return '1211'
     
-    logger.info(f"Random id being returned: {random_id}")
+    logger.info(f"Random id being returned: {random_item}")
     new_req_data = {
         "time_requested": time_requested,
         "recommendation_time": recommendation_time,
-        "recommendation_key": random_id
+        "recommendation_key": random_item
         }
     add_user_history_to_redis(user_id, session_id, new_req_data)
-    return random_id
+    return random_item
 
 @app.route('/evt', methods=['POST'])
 def evt():
@@ -139,6 +139,17 @@ def item():
 
     # redis_status = cache_redis_data(data['item_key'], data)
 
+    data = {
+        "bucket_key": bckt_key,
+        "created_at": time_stamp,
+        "item_key": data['item_key'],
+        "content_type": data['content_type'],
+        "user_id": data['user_id']
+    }
+
+    add_item_to_redis(data)
+
+
     # Send data to Kafka
     if producer is not None:
             msg = json.dumps({
@@ -161,15 +172,17 @@ def items2db():
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
+        # logger.info(data)
         sql_timestamp = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         for item in data: 
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO items (user_id, bucket_key, created_at, item_key, content_type) VALUES (COALESCE(%s, NULL), COALESCE(%s, NULL), COALESCE(CAST(%s AS TIMESTAMP), NULL), COALESCE(%s, NULL),COALESCE(%s, NULL))",  (str(item.get('user_id')), item.get('bucket_key'), sql_timestamp, item.get('item_key'), item.get('type')))
-            conn.commit()
-            cursor.close()
+            add_item_to_redis(item)
+            # cursor = conn.cursor()
+            # cursor.execute("INSERT INTO items (user_id, bucket_key, created_at, item_key, content_type) VALUES (COALESCE(%s, NULL), COALESCE(%s, NULL), COALESCE(CAST(%s AS TIMESTAMP), NULL), COALESCE(%s, NULL),COALESCE(%s, NULL))",  (str(item.get('user_id')), item.get('bucket_key'), sql_timestamp, item.get('item_key'), item.get('type')))
+            # conn.commit()
+            # cursor.close()
         return "done"
     else:
-        print(f"Error: {response.status_code} - {response.reason}")
+    #     print(f"Error: {response.status_code} - {response.reason}")
         return "error"
     
 @app.route('/users2db')
