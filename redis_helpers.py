@@ -26,7 +26,7 @@ redis_client = redis.Redis(
 
 def add_user_history_to_redis(user_id, session_id, new_req_data):
     # check if session exists and append if it does, otherwise push
-    logger.info(type(new_req_data))
+    # logger.info(type(new_req_data))
     if redis_client.hexists(user_id, session_id):
         logger.info('session exists')
         # retrieve the existing session data from Redis
@@ -88,19 +88,13 @@ def user_has_seen_item(user_id, item_id, max_sessions=10):
 
 
 def get_random_redis_item():
-    # get all keys that contain 'item-'
-    keys = redis_client.keys('item-*')
+    # get a random item from the set of all item keys
+    random_key_bytes = redis_client.srandmember('item-keys')
 
-    # select a random key from the list
-    random_key = random.choice(keys)
+    # decode the key from bytes to string and remove the prefix
+    random_key_str = random_key_bytes.decode('utf-8')[5:]
 
-    # get the value for the selected key
-    # value = redis_client.hgetall(random_key)
-    random_key_str = random_key.decode('utf-8')
-    # str_val = json.loads(value)
-    logger.info(f"this one {random_key_str}")
-    key_str_without_prefix = random_key_str[5:]
-    return key_str_without_prefix
+    return random_key_str
 
 
 def add_item_to_redis(data):
@@ -108,14 +102,15 @@ def add_item_to_redis(data):
     del data['item_key']
     redis_client.hmset(key, data)
     item_data = redis_client.hgetall(key)
-    logger.info(item_data)
+    redis_client.sadd('item-keys', key)
+    # logger.info(item_data)
 
 
 def postgres_to_redis_if_empty():
     logger.info(redis_client.dbsize())
     # redis_client.flushall()
     # if redis_client.dbsize() == 0:
-    logger.info('in here 2')
+    # logger.info('in here 2')
     # Redis is empty, so we need to fetch data from Postgres and save to Redis
     conn = psycopg2.connect(
         database="backprop-bunch",
@@ -130,7 +125,7 @@ def postgres_to_redis_if_empty():
     rows = cur.fetchall()
     # logger.info(rows)
     for row in rows:
-        logger.info('row here')
+        # logger.info('row here')
         logger.info(row)
         keys = ['item_key', 'user_id', 'bucket_key',
                 'content_type', 'created_at', 'duration_viewed']
@@ -151,8 +146,8 @@ def cache_redis_data(id, data):
         # If so, decode it to a regular string
         id = id.decode('utf-8')
     cached_response = redis_client.hgetall(id)
-    logger.info(data)
-    logger.info(id)
+    # logger.info(data)
+    # logger.info(id)
 
     if cached_response:
         # If data is already in Redis cache, return cached response

@@ -48,9 +48,11 @@ def redistests():
 def sendid():
     time_requested = time.time()
     # postgres_to_redis_if_empty()
-    logger.info("ITEM REQUESTED")
+    # logger.info("ITEM REQUESTED")
     user_id = request.headers.get('User-Id')
     session_id = request.headers.get('Session-Id')
+    # logger.info(f"User-Id: {user_id}")
+    # logger.info(f"Session-Id: {session_id}")
     if producer is not None:
         msg = json.dumps({
             "user_id": user_id,
@@ -59,10 +61,8 @@ def sendid():
             "evt_type": "ask_reco"
         })
         producer.produce('log_fct_evt', value=msg,
-                         key=None, callback=delivery_report)
+                         key=None)
         producer.flush()
-    logger.info(f"User-Id: {user_id}")
-    logger.info(f"Session-Id: {session_id}")
     while True:
         # get a random item from Redis
         random_item = get_random_redis_item()
@@ -88,7 +88,7 @@ def sendid():
             "recommendation": random_item
         })
         producer.produce('log_fct_evt', value=msg,
-                         key=None, callback=delivery_report)
+                         key=None)
         producer.flush()
     if random_item is None:
         return '1211'

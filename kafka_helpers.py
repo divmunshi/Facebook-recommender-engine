@@ -11,7 +11,7 @@ from confluent_kafka import Producer, KafkaError, Consumer
 from threading import Thread
 
 producer = None
-#Kafka details
+# Kafka details
 host = 'kafka'
 port = 9093
 running_consumers = {}
@@ -19,6 +19,7 @@ running_consumers = {}
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 def check_connection_status(host, port):
     s = socket.socket()
@@ -38,7 +39,7 @@ def check_connection_status(host, port):
 def create_kafka_producer(host, port):
     conf = {
         'bootstrap.servers': f'{host}:{port}',
-        }
+    }
     return Producer(conf)
 
 
@@ -46,7 +47,8 @@ def delivery_report(err, msg):
     if err is not None:
         print(f'Message delivery failed: {err}')
     else:
-        print(f'Message delivered to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}')
+        print(
+            f'Message delivered to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}')
 
 
 def create_kafka_consumer(host, port, group_id, topic):
@@ -61,6 +63,7 @@ def create_kafka_consumer(host, port, group_id, topic):
 
     return consumer
 
+
 def consume(consumer):
     while True:
         msg = consumer.poll(1.0)
@@ -71,4 +74,4 @@ def consume(consumer):
         else:
             logging.info(f"Received message: {msg.value().decode('utf-8')}")
             # if redis_type == 'item'
-                # cache_redis_data(data['user_id'], json.dumps(data))
+            # cache_redis_data(data['user_id'], json.dumps(data))
