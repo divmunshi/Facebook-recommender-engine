@@ -78,23 +78,27 @@ def user_has_seen_item(user_id, item_id, max_sessions=10):
 
 
 def get_random_redis_item():
-    # Get all values in Redis for the "item_key" field
-    all_values = redis_client.hkeys('items')
-    # logger.info(all_values)
-    # all_values = [key.decode() for key in all_values]
+    # get all keys that contain 'item-'
+    keys = redis_client.keys('item-*')
 
-    # If there are no values, return None
-    if not all_values:
-        return None
+    # select a random key from the list
+    random_key = random.choice(keys)
 
-    # Select a random value
-    random_value = random.choice(all_values)
+    # get the value for the selected key
+    # value = redis_client.hgetall(random_key)
+    # dict_val = value.decode('utf-8')
+    # str_val = json.loads(value)
+    logger.info(random_key)
+    key_str_without_prefix = random_key[5:]
+    return key_str_without_prefix
 
-    # Decode the selected value from bytes to a regular string
-    str_value = random_value.decode('utf-8')
 
-    # Return the selected value as a string
-    return str_value
+def add_item_to_redis(data):
+    key = 'item-' + data['item_key']
+    del data['item_key']
+    redis_client.hmset(key, data)
+    item_data = redis_client.hgetall(key)
+    logger.info(item_data)
 
 
 def postgres_to_redis_if_empty():
