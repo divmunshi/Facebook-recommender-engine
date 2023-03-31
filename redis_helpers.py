@@ -143,7 +143,6 @@ def get_random_popular_item(exclude_item_ids=set()):
         return None
 
 def get_random_redis_item(excluded_keys=[]):
-    # get a random item key from the set of all item keys that is not in the excluded list
     random_key_bytes = redis_client.srandmember('item-keys')
 
     if random_key_bytes is not None:
@@ -172,6 +171,18 @@ def get_item_from_redis(item_id):
         return item_data
     else:
         return None
+
+
+def get_user_recommendation_keys(user_id, max_sessions=10):
+    session_ids = redis_client.hkeys(user_id)
+    session_ids.reverse()
+    keys = []
+    for session_id in session_ids[:max_sessions]:
+        session_data = json.loads(redis_client.hget(
+            user_id, session_id).decode('utf-8'))
+        for req_data in session_data:
+            keys.append(req_data.get('recommendation_key'))
+    return keys
 
 
 def postgres_to_redis_if_empty():

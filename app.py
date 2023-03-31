@@ -61,6 +61,9 @@ def sendid():
     session_id = request.headers.get('Session-Id')
     # logger.info(f"User-Id: {user_id}")
     # logger.info(f"Session-Id: {session_id}")
+    user_has_seen = get_user_recommendation_keys(user_id, max_sessions=30)
+    # logger.info(f"User has seen these: {user_has_seen}")
+
     if producer is not None:
         msg = json.dumps({
             "user_id": user_id,
@@ -71,20 +74,8 @@ def sendid():
         producer.produce('log_fct_evt', value=msg,
                          key=None)
         producer.flush()
-    while True:
         # get a random item from Redis
-        random_item = get_random_redis_item()
-
-        # check if the user has seen the item
-        result = user_has_seen_item(user_id, random_item, max_sessions=10)
-        if random_item is None:
-            print("No item keys in redis")
-            break
-        elif result:
-            print(f"User {user_id} has seen item {random_item}.")
-        else:
-            print(f"User {user_id} has NOT seen item {random_item}.")
-            break
+    random_item = get_random_redis_item(excluded_keys=user_has_seen)
 
     recommendation_time = time.time()
     if producer is not None:
