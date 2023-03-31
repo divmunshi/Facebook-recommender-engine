@@ -8,7 +8,7 @@ from datetime import datetime
 import json
 import psycopg2
 from kafka_helpers import check_connection_status, delivery_report, create_kafka_producer, create_kafka_consumer, consume
-from redis_helpers import cache_redis_data, get_random_redis_item, postgres_to_redis_if_empty, add_user_history_to_redis, get_user_history_from_redis, user_has_seen_item, update_user_history_in_redis, add_item_to_redis
+from redis_helpers import cache_redis_data, get_random_redis_item, postgres_to_redis_if_empty, add_user_history_to_redis, get_user_history_from_redis, user_has_seen_item, update_user_history_in_redis, add_item_to_redis, update_item_duration, get_item_from_redis, get_random_popular_item
 import requests
 
 app = Flask(__name__)
@@ -26,6 +26,14 @@ if check_connection_status('kafka', 9093):
 
 @app.route('/testtest')
 def redistests():
+    update_item_duration("19051991-a748-429c-9007-92ef5af16531", 500)
+    item = get_item_from_redis("19051991-a748-429c-9007-92ef5af16531")
+    popular_item = get_random_popular_item(set(["19051991-a748-429c-9007-92ef5af16531", "eb69db11-ed11-4689-af4e-95c5dcc58eb9"]))
+    logger.info(f"popular_item is {popular_item}")
+    # logger.info(f"pop item is {popular_item}")
+    # random_item = get_random_redis_item()
+    # logger.info(f"random item is {random_item}")
+    
     # postgres_to_redis_if_empty()
     # user_id = 'brvhjberjh'
     # session_id = 'hwevui2448738'
@@ -201,6 +209,7 @@ def users2db():
     if response.status_code == 200:
         data = response.json()
         for item in data:
+            # add_item_to_redis(item)
             cursor = conn.cursor()
             cursor.execute("INSERT INTO users (age, country, gender, user_id) VALUES (COALESCE(CAST(%s AS INTEGER), NULL), COALESCE(%s, NULL), COALESCE(%s, NULL), COALESCE(%s, NULL))",  (item.get(
                 'age'), item.get('country'), item.get('gender'), item.get('id')))

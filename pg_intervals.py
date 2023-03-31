@@ -7,7 +7,7 @@ from psycopg2 import sql
 from psycopg2.extras import DictCursor
 import logging
 import schedule
-from redis_helpers import update_user_history_in_redis
+from redis_helpers import update_user_history_in_redis, update_item_duration
 ### RUN THIS FILE EVERY HOUR FROM APACHE AIRFLOW ###
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -54,6 +54,8 @@ def job():
             for i in range(1, len(result)-1):
                 logger.info(result[i])
                 if result[i]["event_type"] == "return_reco":
+                    duration = result[i+1]['evt_time'] - result[i]['evt_time']
+                    update_item_duration(result[i]["recommendation"], duration)
                     interval_timestamp = datetime.timestamp(
                         result[i+1]['evt_time'])-datetime.timestamp(result[i]['evt_time'])
                     update_user_history_in_redis(
