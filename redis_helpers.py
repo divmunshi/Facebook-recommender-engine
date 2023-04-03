@@ -86,6 +86,7 @@ def user_has_seen_item(user_id, item_id, max_sessions=10):
                 return True
     return False
 
+
 def get_user_recommendation_keys(user_id, max_sessions=10):
     session_ids = redis_client.hkeys(user_id)
     session_ids.reverse()
@@ -97,12 +98,14 @@ def get_user_recommendation_keys(user_id, max_sessions=10):
             keys.append(req_data.get('recommendation_key'))
     return keys
 
+
 def update_item_duration(item_id, item_duration):
     # Retrieve the item from Redis
     # item = redis_client.hgetall(item_id)
     item_key = 'item-' + item_id
     # Retrieve the item from Redis
-    item = {key.decode('utf-8'): value.decode('utf-8') for key, value in redis_client.hgetall(item_key).items()}
+    item = {key.decode('utf-8'): value.decode('utf-8')
+            for key, value in redis_client.hgetall(item_key).items()}
     logger.info(item)
     # Decode item_key from bytes to string
     # item_key = item_key.decode('utf-8')
@@ -116,16 +119,17 @@ def update_item_duration(item_id, item_duration):
     else:
         num_views = 1
         total_duration = item_duration
-    
+
     # Save the updated item back to Redis
     redis_client.hmset(item_key, {
         'num_views': num_views,
         'total_duration': total_duration
     })
-    
+
     # Add the item to the "popular items" grouping using a sorted set in Redis
     avg_duration = total_duration / num_views
     redis_client.zadd('popular_items', {item_id: avg_duration})
+
 
 def get_random_popular_item(exclude_item_ids=set()):
     # Retrieve the top 100 most popular items from Redis
@@ -138,9 +142,11 @@ def get_random_popular_item(exclude_item_ids=set()):
     # Select a random item ID from the remaining popular items
     if popular_items:
         item_id = random.choice(popular_items)
+        # item_id = popular_items[0]
         return item_id
     else:
         return None
+
 
 def get_random_redis_item(excluded_keys=[]):
     random_key_bytes = redis_client.srandmember('item-keys')
@@ -161,11 +167,13 @@ def add_item_to_redis(data):
     redis_client.sadd('item-keys', key)
     # logger.info(item_data)
 
+
 def get_item_from_redis(item_id):
     key = 'item-' + item_id
     item_data = redis_client.hgetall(key)
     if item_data:
-        item_data = {key.decode('utf-8'): value.decode('utf-8') for key, value in item_data.items()}
+        item_data = {key.decode('utf-8'): value.decode('utf-8')
+                     for key, value in item_data.items()}
         # item_data['num_views'] = int(item_data.get('num_views', 0))
         # item_data['total_duration'] = int(item_data.get('total_duration', 0))
         return item_data

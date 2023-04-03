@@ -54,12 +54,15 @@ def job():
             for i in range(1, len(result)-1):
                 logger.info(result[i])
                 if result[i]["event_type"] == "return_reco":
-                    duration = result[i+1]['evt_time'] - result[i]['evt_time']
+                    duration = (result[i+1]['evt_time'] -
+                                result[i]['evt_time']).total_seconds()
+                    logger.info('duration here')
+                    logger.info(duration)
                     update_item_duration(result[i]["recommendation"], duration)
                     interval_timestamp = datetime.timestamp(
                         result[i+1]['evt_time'])-datetime.timestamp(result[i]['evt_time'])
                     update_user_history_in_redis(
-                        result[i]["user_id"], result[i]["session_id"], result[i]["recommendation"], datetime.fromtimestamp(interval_timestamp, tz = None).strftime('%Y-%m-%d %H:%M:%S.%f'))
+                        result[i]["user_id"], result[i]["session_id"], result[i]["recommendation"], duration)
                     received_at = result[i-1]['evt_time']
                     sent_at = result[i]['evt_time']
                     latency_timestamp = datetime.timestamp(

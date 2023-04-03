@@ -8,7 +8,7 @@ from datetime import datetime
 import json
 import psycopg2
 from kafka_helpers import check_connection_status, delivery_report, create_kafka_producer, create_kafka_consumer, consume
-from redis_helpers import cache_redis_data, get_random_redis_item, postgres_to_redis_if_empty, add_user_history_to_redis, get_user_history_from_redis, user_has_seen_item, update_user_history_in_redis, add_item_to_redis, update_item_duration, get_item_from_redis, get_random_popular_item
+from redis_helpers import cache_redis_data, get_random_redis_item, postgres_to_redis_if_empty, add_user_history_to_redis, get_user_history_from_redis, user_has_seen_item, update_user_history_in_redis, add_item_to_redis, update_item_duration, get_item_from_redis, get_random_popular_item, get_user_recommendation_keys
 import requests
 
 app = Flask(__name__)
@@ -28,12 +28,13 @@ if check_connection_status('kafka', 9093):
 def redistests():
     update_item_duration("19051991-a748-429c-9007-92ef5af16531", 500)
     item = get_item_from_redis("19051991-a748-429c-9007-92ef5af16531")
-    popular_item = get_random_popular_item(set(["19051991-a748-429c-9007-92ef5af16531", "eb69db11-ed11-4689-af4e-95c5dcc58eb9"]))
+    popular_item = get_random_popular_item(set(
+        ["19051991-a748-429c-9007-92ef5af16531", "eb69db11-ed11-4689-af4e-95c5dcc58eb9"]))
     logger.info(f"popular_item is {popular_item}")
     # logger.info(f"pop item is {popular_item}")
     # random_item = get_random_redis_item()
     # logger.info(f"random item is {random_item}")
-    
+
     # postgres_to_redis_if_empty()
     # user_id = 'brvhjberjh'
     # session_id = 'hwevui2448738'
@@ -74,8 +75,13 @@ def sendid():
         producer.produce('log_fct_evt', value=msg,
                          key=None)
         producer.flush()
-        # get a random item from Redis
-    random_item = get_random_redis_item(excluded_keys=user_has_seen)
+        # popular item
+    # item_to_return = get_random_popular_item(
+    #     exclude_item_ids=set(user_has_seen))
+    # logger.info(f"popular item: {item_to_return}")
+    # if item_to_return is None:
+    logger.info('getting random instead')
+    item_to_return = get_random_redis_item(excluded_keys=user_has_seen)
 
     recommendation_time = time.time()
     if producer is not None:
@@ -84,22 +90,22 @@ def sendid():
             "session_id": session_id,
             "evt_time": recommendation_time,
             "evt_type": "return_reco",
-            "recommendation": random_item
+            "recommendation": item_to_return
         })
         producer.produce('log_fct_evt', value=msg,
                          key=None)
         producer.flush()
-    if random_item is None:
-        return '1211'
+    if item_to_return is None:
+        return '0f7b1746-068c-4111-9237-4473519d1135'
 
-    logger.info(f"Random id being returned: {random_item}")
+    logger.info(f"Id being returned: {item_to_return}")
     new_req_data = {
         "time_requested": time_requested,
         "recommendation_time": recommendation_time,
-        "recommendation_key": random_item
+        "recommendation_key": item_to_return
     }
     add_user_history_to_redis(user_id, session_id, new_req_data)
-    return random_item
+    return item_to_return
 
 
 @app.route('/evt', methods=['POST'])
